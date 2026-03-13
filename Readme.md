@@ -872,6 +872,7 @@ $component('todo-app', () => {
 5. **Cleanup** - `onUnmount()` registers functions called when component is removed
 6. **Host access** - `host` gives direct access to the custom element instance
 
+---
 
 ### `$router(routes)` - Router
 
@@ -1536,6 +1537,7 @@ function useFetch(url) {
     } catch (e) {
       error(e);
     } finally {
+
 
 
 
