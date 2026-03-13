@@ -572,30 +572,30 @@ const Page = () => html`
 
 ---
 
-### `$component(tag, setup, observedAttributes)` - Web Components
+### `$component(tagName, setupFunction, observedAttributes)` - Web Components
 
-Creates Custom Elements with automatic reactive properties.
+Creates Custom Elements with reactive properties. Uses Light DOM (no Shadow DOM) and a slot system based on node filtering.
 
 #### Basic Component
 
-```typescript
+```javascript
 import { $, $component, html } from 'sigpro';
 
 $component('my-counter', (props, context) => {
   // props contains signals for each observed attribute
-  // context provides component utilities
+  // context: { slot, emit, host, onUnmount }
   
   const increment = () => {
-    props.value(v => v + 1);
+    props.value(v => (parseInt(v) || 0) + 1);
   };
   
   return html`
-    <div class="counter">
-      <p>Count: ${props.value}</p>
-      <button @click=${increment}>
-        Increment
-      </button>
-      <slot></slot>
+    <div>
+      <p>Value: ${props.value}</p>
+      <button @click=${increment}>Increment</button>
+      
+      <!-- Slots: renders filtered child content -->
+      ${context.slot()}
     </div>
   `;
 }, ['value']); // Observed attributes
@@ -604,147 +604,36 @@ $component('my-counter', (props, context) => {
 Usage:
 ```html
 <my-counter value="5">
-  <span>Additional content</span>
+  <span>▼ This is the default slot</span>
+  <p>More content in the slot</p>
 </my-counter>
 
 <script>
   const counter = document.querySelector('my-counter');
-  console.log(counter.value); // 5
-  counter.value = 10; // Reactive update
+  console.log(counter.value); // "5"
+  counter.value = "10"; // Reactive update
 </script>
 ```
 
-#### Component with Complex Props
+#### Component with Named Slots
 
-```typescript
+```javascript
 import { $, $component, html } from 'sigpro';
 
-$component('user-profile', (props, context) => {
-  // Transform string attributes to appropriate types
-  const user = $(() => ({
-    id: parseInt(props.id()),
-    name: props.name(),
-    age: parseInt(props.age()),
-    active: props.active() === 'true'
-  }));
-  
+$component('my-card', (props, { slot }) => {
   return html`
-    <div class="profile">
-      <h2>${user().name}</h2>
-      <p>ID: ${user().id}</p>
-      <p>Age: ${user().age}</p>
-      <p>Status: ${() => user().active ? 'Active' : 'Inactive'}</p>
+    <div class="card">
+      <div class="header">
+        ${slot('header')} <!-- Named slot: header -->
+      </div>
       
-      <button @click=${() => props.age(a => parseInt(a) + 1)}>
-        Birthday!
-      </button>
-    </div>
-  `;
-}, ['id', 'name', 'age', 'active']);
-```
-
-#### Component Lifecycle & Context
-
-```typescript
-import { $, $component, html } from 'sigpro';
-
-$component('lifecycle-demo', (props, {
-  select,        // Query selector scoped to component
-  selectAll,     // Query selector all scoped to component
-  slot,          // Access slots
-  emit,          // Dispatch custom events
-  host,          // Reference to the host element
-  onMount,       // Register mount callback
-  onUnmount,     // Register unmount callback
-  onAttribute,   // Listen to attribute changes
-  getAttribute,  // Get raw attribute value
-  setAttribute,  // Set raw attribute value
-}) => {
-  
-  // Access slots
-  const defaultSlot = slot(); // Unnamed slot
-  const headerSlot = slot('header'); // Named slot
-  
-  // Query internal elements
-  const button = select('button');
-  const allSpans = selectAll('span');
-  
-  // Lifecycle hooks
-  onMount(() => {
-    console.log('Component mounted');
-    // Access DOM after mount
-    button?.classList.add('mounted');
-  });
-  
-  onUnmount(() => {
-    console.log('Component unmounting');
-    // Cleanup resources
-  });
-  
-  // Listen to specific attribute changes
-  onAttribute('value', (newValue, oldValue) => {
-    console.log(`Value changed from ${oldValue} to ${newValue}`);
-  });
-  
-  // Emit custom events
-  const handleClick = () => {
-    emit('button-click', { timestamp: Date.now() });
-    emit('value-change', props.value(), { bubbles: true });
-  };
-  
-  // Access host directly
-  host.style.display = 'block';
-  
-  return html`
-    <div>
-      ${headerSlot}
-      <button @click=${handleClick}>
-        Click me
-      </button>
-      ${defaultSlot}
-    </div>
-  `;
-}, ['value']);
-```
-
-#### Component with Methods
-
-```typescript
-import { $, $component, html } from 'sigpro';
-
-$component('timer-widget', (props, { host }) => {
-  const seconds = $(0);
-  let intervalId;
-  
-  // Expose methods to the host element
-  Object.assign(host, {
-    start() {
-      if (intervalId) return;
-      intervalId = setInterval(() => {
-        seconds(s => s + 1);
-      }, 1000);
-    },
-    
-    stop() {
-      clearInterval(intervalId);
-      intervalId = null;
-    },
-    
-    reset() {
-      seconds(0);
-    },
-    
-    get currentTime() {
-      return seconds();
-    }
-  });
-  
-  return html`
-    <div>
-      <p>${seconds} seconds</p>
-      <button @click=${() => host.start()}>Start</button>
-      <button @click=${() => host.stop()}>Stop</button>
-      <button @click=${() => host.reset()}>Reset</button>
+      <div class="content">
+        ${slot()} <!-- Default slot (no name) -->
+      </div>
+      
+      <div class="footer">
+        ${slot('footer')} <!-- Named slot: footer -->
+      </div>
     </div>
   `;
 }, []);
@@ -752,41 +641,237 @@ $component('timer-widget', (props, { host }) => {
 
 Usage:
 ```html
-<timer-widget id="timer"></timer-widget>
-<script>
-  const timer = document.getElementById('timer');
-  timer.start();
-  timer.stop();
-  console.log(timer.currentTime);
-</script>
+<my-card>
+  <h3 slot="header">Card Title</h3>
+  
+  <p>This goes to default slot</p>
+  <span>Also default slot</span>
+  
+  <div slot="footer">
+    <button>Action</button>
+  </div>
+</my-card>
 ```
 
-#### Component Inheritance
+#### Component with Props and Events
 
-```typescript
+```javascript
 import { $, $component, html } from 'sigpro';
 
-// Base component
-$component('base-button', (props, { slot }) => {
+$component('todo-item', (props, { emit, host }) => {
+  const handleToggle = () => {
+    props.completed(c => !c);
+    emit('toggle', { id: props.id(), completed: props.completed() });
+  };
+  
+  const handleDelete = () => {
+    emit('delete', { id: props.id() });
+  };
+  
   return html`
-    <button class="base-button" ?disabled=${props.disabled}>
-      ${slot()}
-    </button>
+    <div class="todo-item">
+      <input 
+        type="checkbox"
+        ?checked=${props.completed}
+        @change=${handleToggle}
+      />
+      <span style=${() => props.completed() ? 'text-decoration: line-through' : ''}>
+        ${props.text}
+      </span>
+      <button @click=${handleDelete}>✕</button>
+    </div>
   `;
-}, ['disabled']);
-
-// Extended component
-$component('primary-button', (props, context) => {
-  // Reuse base component
-  return html`
-    <base-button ?disabled=${props.disabled} class="primary">
-      ${context.slot()}
-    </base-button>
-  `;
-}, ['disabled']);
+}, ['id', 'text', 'completed']);
 ```
 
----
+Usage:
+```html
+<todo-item 
+  id="1" 
+  text="Learn SigPro" 
+  completed="false"
+  @toggle=${(e) => console.log('Toggled:', e.detail)}
+  @delete=${(e) => console.log('Deleted:', e.detail)}
+></todo-item>
+```
+
+#### Component with Cleanup
+
+```javascript
+import { $, $component, html, $$ } from 'sigpro';
+
+$component('timer-widget', (props, { onUnmount }) => {
+  const seconds = $(0);
+  
+  // Effect with automatic cleanup
+  $$(() => {
+    const interval = setInterval(() => {
+      seconds(s => s + 1);
+    }, 1000);
+    
+    // Return cleanup function
+    return () => clearInterval(interval);
+  });
+  
+  // Register unmount hook
+  onUnmount(() => {
+    console.log('Timer widget unmounted');
+  });
+  
+  return html`
+    <div>
+      <p>Seconds: ${seconds}</p>
+      <p>Initial value: ${props.initial}</p>
+    </div>
+  `;
+}, ['initial']);
+```
+
+#### Complete Context API
+
+```javascript
+import { $, $component, html } from 'sigpro';
+
+$component('context-demo', (props, context) => {
+  // Context properties:
+  // - slot(name) - Gets child nodes with matching slot attribute
+  // - emit(name, detail) - Dispatches custom event
+  // - host - Reference to the custom element instance
+  // - onUnmount(callback) - Register cleanup function
+  
+  const {
+    slot,        // Function: (name?: string) => Node[]
+    emit,        // Function: (name: string, detail?: any) => void
+    host,        // HTMLElement: the custom element itself
+    onUnmount    // Function: (callback: () => void) => void
+  } = context;
+  
+  // Access host directly
+  console.log('Host element:', host);
+  console.log('Host attributes:', host.getAttribute('my-attr'));
+  
+  // Handle events
+  const handleClick = () => {
+    emit('my-event', { message: 'Hello from component' });
+  };
+  
+  // Register cleanup
+  onUnmount(() => {
+    console.log('Cleaning up...');
+  });
+  
+  return html`
+    <div>
+      ${slot('header')}
+      <button @click=${handleClick}>Emit Event</button>
+      ${slot()}
+      ${slot('footer')}
+    </div>
+  `;
+}, []);
+```
+
+#### Practical Example: Todo App Component
+
+```javascript
+import { $, $component, html } from 'sigpro';
+
+$component('todo-app', () => {
+  const todos = $([]);
+  const newTodo = $('');
+  const filter = $('all');
+  
+  const addTodo = () => {
+    if (newTodo().trim()) {
+      todos([...todos(), { 
+        id: Date.now(), 
+        text: newTodo(), 
+        completed: false 
+      }]);
+      newTodo('');
+    }
+  };
+  
+  const filteredTodos = $(() => {
+    const currentFilter = filter();
+    const allTodos = todos();
+    
+    if (currentFilter === 'active') {
+      return allTodos.filter(t => !t.completed);
+    }
+    if (currentFilter === 'completed') {
+      return allTodos.filter(t => t.completed);
+    }
+    return allTodos;
+  });
+  
+  return html`
+    <div class="todo-app">
+      <h1>📝 Todo App</h1>
+      
+      <!-- Input Area -->
+      <div class="add-todo">
+        <input 
+          :value=${newTodo}
+          @keydown=${(e) => e.key === 'Enter' && addTodo()}
+          placeholder="What needs to be done?"
+        />
+        <button @click=${addTodo}>Add</button>
+      </div>
+      
+      <!-- Filters -->
+      <div class="filters">
+        <button @click=${() => filter('all')}>All</button>
+        <button @click=${() => filter('active')}>Active</button>
+        <button @click=${() => filter('completed')}>Completed</button>
+      </div>
+      
+      <!-- Todo List -->
+      <div class="todo-list">
+        ${() => filteredTodos().map(todo => html`
+          <todo-item
+            id=${todo.id}
+            text=${todo.text}
+            ?completed=${todo.completed}
+            @toggle=${(e) => {
+              const { id, completed } = e.detail;
+              todos(todos().map(t => 
+                t.id === id ? { ...t, completed } : t
+              ));
+            }}
+            @delete=${(e) => {
+              todos(todos().filter(t => t.id !== e.detail.id));
+            }}
+          ></todo-item>
+        `)}
+      </div>
+      
+      <!-- Stats -->
+      <div class="stats">
+        ${() => {
+          const total = todos().length;
+          const completed = todos().filter(t => t.completed).length;
+          return html`
+            <span>Total: ${total}</span>
+            <span>Completed: ${completed}</span>
+            <span>Remaining: ${total - completed}</span>
+          `;
+        }}
+      </div>
+    </div>
+  `;
+}, []);
+```
+
+#### Key Points About `$component`:
+
+1. **Light DOM only** - No Shadow DOM, children are accessible and styleable from outside
+2. **Slot system** - `slot()` function filters child nodes by `slot` attribute
+3. **Reactive props** - Each observed attribute becomes a signal in the `props` object
+4. **Event emission** - `emit()` dispatches custom events with `detail` payload
+5. **Cleanup** - `onUnmount()` registers functions called when component is removed
+6. **Host access** - `host` gives direct access to the custom element instance
+
 
 ### `$router(routes)` - Router
 
@@ -1451,6 +1536,7 @@ function useFetch(url) {
     } catch (e) {
       error(e);
     } finally {
+
 
 
 
