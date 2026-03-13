@@ -1,4 +1,4 @@
-# SigPro ??
+# SigPro 🚀
 
 A minimalist reactive library for building web interfaces with signals, effects, and native web components. No compilation, no virtual DOM, just pure JavaScript and intelligent reactivity.
 
@@ -6,7 +6,7 @@ A minimalist reactive library for building web interfaces with signals, effects,
 [![bundle size](https://img.shields.io/bundlephobia/minzip/sigpro)](https://bundlephobia.com/package/sigpro)
 [![license](https://img.shields.io/npm/l/sigpro)](https://github.com/yourusername/sigpro/blob/main/LICENSE)
 
-## ?? Installation
+## 📦 Installation
 
 ```bash
 npm install sigpro
@@ -19,18 +19,18 @@ Or directly in the browser:
 </script>
 ```
 
-## ?? Philosophy
+## 🎯 Philosophy
 
 SigPro (Signal Professional) embraces the web platform. Built on top of Custom Elements and reactive proxies, it offers a development experience similar to modern frameworks but with a minimal footprint and zero dependencies.
 
 **Core Principles:**
-- ?? **True Reactivity** - Automatic dependency tracking, no manual subscriptions
-- ? **Surgical Updates** - Only the exact nodes that depend on changed values are updated
-- ?? **Web Standards** - Built on Custom Elements, no custom rendering engine
-- ?? **Intuitive API** - Learn once, use everywhere
-- ?? **Predictable** - No magic, just signals and effects
+- 📡 **True Reactivity** - Automatic dependency tracking, no manual subscriptions
+- ⚡ **Surgical Updates** - Only the exact nodes that depend on changed values are updated
+- 🧩 **Web Standards** - Built on Custom Elements, no custom rendering engine
+- 🎨 **Intuitive API** - Learn once, use everywhere
+- 🔬 **Predictable** - No magic, just signals and effects
 
-## ?? API Reference
+## 📚 API Reference
 
 ---
 
@@ -933,7 +933,7 @@ $$(() => {
 
 ---
 
-## ?? Complete Examples
+## 🎮 Complete Examples
 
 ### Real-time Todo Application
 
@@ -1122,7 +1122,7 @@ $component('todo-app', () => {
   return html`
     ${styles}
     <div class="todo-app">
-      <h1>?? Todo App</h1>
+      <h1>📝 Todo App</h1>
       
       <!-- Add Todo -->
       <div class="todo-input">
@@ -1181,7 +1181,7 @@ $component('todo-app', () => {
               <span @dblclick=${() => startEdit(todo)}>
                 ${todo.text}
               </span>
-              <button @click=${() => deleteTodo(todo.id)}>?</button>
+              <button @click=${() => deleteTodo(todo.id)}>✕</button>
             `}
           </div>
         `)}
@@ -1286,7 +1286,7 @@ $component('data-dashboard', () => {
   
   return html`
     <div class="dashboard">
-      <h2>?? Real-time Dashboard</h2>
+      <h2>📊 Real-time Dashboard</h2>
       
       <!-- Controls -->
       <div class="controls">
@@ -1342,7 +1342,7 @@ $component('data-dashboard', () => {
 }, []);
 ```
 
-## ?? Advanced Patterns
+## 🔧 Advanced Patterns
 
 ### Custom Hooks
 
