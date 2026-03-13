@@ -6,18 +6,18 @@ A minimalist reactive library for building web interfaces with signals, effects,
 [![bundle size](https://img.shields.io/bundlephobia/minzip/sigpro)](https://bundlephobia.com/package/sigpro)
 [![license](https://img.shields.io/npm/l/sigpro)](https://github.com/yourusername/sigpro/blob/main/LICENSE)
 
+## ❓ Why?
+
+After years of building applications with React, Vue, and Svelte—investing countless hours mastering their unique mental models, build tools, and update cycles—I kept circling back to the same realization: no matter how sophisticated the framework, it all eventually compiles down to HTML, CSS, and vanilla JavaScript. The web platform has evolved tremendously, yet many libraries continue to reinvent the wheel, creating parallel universes with their own rules, their own syntaxes, and their own steep learning curves.
+
+**SigPro is my answer to a simple question:** Why fight the platform when we can embrace it?
+
+Modern browsers now offer powerful primitives—Custom Elements, Shadow DOM, CSS custom properties, and microtask queues—that make true reactivity possible without virtual DOM diffing, without compilers, and without lock-in. SigPro strips away the complexity, delivering a reactive programming model that feels familiar but stays remarkably close to vanilla JS. No JSX transformations, no template compilers, no proprietary syntax to learn—just functions, signals, and template literals that work exactly as you'd expect.
+
+What emerged is a library that proves we've reached a turning point: the web is finally mature enough that we don't need to abstract it anymore. We can build reactive, component-based applications using virtually pure JavaScript, leveraging the platform's latest advances instead of working against them. SigPro isn't just another framework—it's a return to fundamentals, showing that the dream of simple, powerful reactivity is now achievable with the tools browsers give us out of the box.
+
 ## 📦 Installation
-
-```bash
-npm install sigpro
-```
-
-Or directly in the browser:
-```html
-<script type="module">
-  import { $, $$, html, $component, $router } from 'https://unpkg.com/sigpro@latest?module';
-</script>
-```
+Copy sigpro.js where you want to use it.
 
 ## 🎯 Philosophy
 
@@ -1393,3 +1393,4 @@ function useFetch(url) {
     } catch (e) {
       error(e);
     } finally {
+
