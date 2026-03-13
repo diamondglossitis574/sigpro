@@ -57,6 +57,15 @@ What emerged is a library that proves we've reached a turning point: the web is 
 *"Stop fighting the platform. Start building with it."*
 
 ## 📦 Installation
+
+```
+npm install sigpro
+```
+or
+```
+bun add sigpro
+```
+
 Copy sigpro.js where you want to use it.
 
 ## 🎯 Philosophy
@@ -1537,6 +1546,7 @@ function useFetch(url) {
     } catch (e) {
       error(e);
     } finally {
+
 
 
 
