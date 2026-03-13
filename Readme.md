@@ -65,8 +65,9 @@ or
 ```
 bun add sigpro
 ```
+or more simple:
 
-Copy sigpro.js where you want to use it.
+copy "sigpro.js" file where you want to use it.
 
 ## 🎯 Philosophy
 
@@ -1546,6 +1547,7 @@ function useFetch(url) {
     } catch (e) {
       error(e);
     } finally {
+
 
 
 
