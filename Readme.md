@@ -70,6 +70,24 @@ SigPro (Signal Professional) embraces the web platform. Built on top of Custom E
 - 🎨 **Intuitive API** - Learn once, use everywhere
 - 🔬 **Predictable** - No magic, just signals and effects
 
+## 💡 Hint for VS Code
+
+For the best development experience with SigPro, install these VS Code extensions:
+
+- **Prettier** – Automatically formats your template literals for better readability
+- **lit-html** – Adds syntax highlighting, autocompletion, and inline HTML color previews inside `html` tagged templates
+
+This combination gives you framework-level developer experience without the framework complexity—syntax highlighting, color previews, and automatic formatting for your reactive templates, all while writing pure JavaScript.
+
+```javascript
+// With lit-html extension, this gets full syntax highlighting and color previews!
+html`
+  <div style="color: #ff4444; background: linear-gradient(45deg, blue, green)">
+    <h1>Beautiful highlighted template</h1>
+  </div>
+`
+```
+
 ## 📚 API Reference
 
 ---
@@ -1433,5 +1451,6 @@ function useFetch(url) {
     } catch (e) {
       error(e);
     } finally {
+
 
 
