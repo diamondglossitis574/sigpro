@@ -1,0 +1,11 @@
+{
+  "name": "sigpro",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "del": "rm node_modules/.vite/deps -r",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
