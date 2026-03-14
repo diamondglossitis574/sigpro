@@ -37,8 +37,6 @@ What emerged is a library that proves we've reached a turning point: the web is 
 
 ## 🎯 Scientific Conclusion
 
-**SigPro is objectively superior in 12/14 metrics:**
-
 ✅ **Bundle Size** – 70% smaller than Svelte, 88% smaller than React  
 ✅ **Time to Interactive** – 43% faster than Solid, 65% faster than React  
 ✅ **Initial Render** – 57% faster than Solid, 73% faster than React  
