@@ -101,7 +101,7 @@ export const $ = (initialValue) => {
  * @param {Function} effectFn - The effect function to run
  * @returns {Function} Cleanup function to stop the effect
  */
-export const $effect = (effectFn) => {
+export const $e = (effectFn) => {
   const effect = {
     dependencies: new Set(),
     cleanupHandlers: new Set(),
@@ -148,7 +148,7 @@ export const $$ = (key, initialValue, storage = localStorage) => {
   const signal = $(saved !== null ? JSON.parse(saved) : initialValue);
 
   // Auto-save on changes
-  $effect(() => {
+  $e(() => {
     const value = signal();
     if (value === undefined || value === null) {
       storage.removeItem(key);
@@ -197,7 +197,7 @@ export const html = (strings, ...values) => {
         parent.insertBefore(endMarker, node);
 
         let lastResult;
-        $effect(() => {
+        $e(() => {
           let result = typeof currentValue === "function" ? currentValue() : currentValue;
           if (result === lastResult) return;
           lastResult = result;
@@ -333,15 +333,15 @@ export const html = (strings, ...values) => {
           });
 
           // Cleanup
-          if ($effect.onCleanup) {
-            $effect.onCleanup(() => node.removeEventListener(eventName, handlerWrapper));
+          if ($e.onCleanup) {
+            $e.onCleanup(() => node.removeEventListener(eventName, handlerWrapper));
           }
         } else if (firstChar === ":") {
           // Two-way binding
           const propertyName = attributeName.slice(1);
           const eventType = node.type === "checkbox" || node.type === "radio" ? "change" : "input";
 
-          $effect(() => {
+          $e(() => {
             const value = typeof currentValue === "function" ? currentValue() : currentValue;
             if (node[propertyName] !== value) node[propertyName] = value;
           });
@@ -353,14 +353,14 @@ export const html = (strings, ...values) => {
         } else if (firstChar === "?") {
           // Boolean attribute
           const attrName = attributeName.slice(1);
-          $effect(() => {
+          $e(() => {
             const result = typeof currentValue === "function" ? currentValue() : currentValue;
             node.toggleAttribute(attrName, !!result);
           });
         } else if (firstChar === ".") {
           // Property binding
           const propertyName = attributeName.slice(1);
-          $effect(() => {
+          $e(() => {
             let result = typeof currentValue === "function" ? currentValue() : currentValue;
             node[propertyName] = result;
             if (result != null && typeof result !== "object" && typeof result !== "boolean") {
@@ -370,7 +370,7 @@ export const html = (strings, ...values) => {
         } else {
           // Regular attribute
           if (typeof currentValue === "function") {
-            $effect(() => node.setAttribute(attributeName, currentValue()));
+            $e(() => node.setAttribute(attributeName, currentValue()));
           } else {
             node.setAttribute(attributeName, currentValue);
           }
@@ -393,7 +393,7 @@ export const html = (strings, ...values) => {
  * @param {Function} setupFunction - Component setup function
  * @param {string[]} observedAttributes - Array of observed attributes
  */
-export const $component = (tagName, setupFunction, observedAttributes = []) => {
+export const $c = (tagName, setupFunction, observedAttributes = []) => {
   if (customElements.get(tagName)) return;
 
   customElements.define(
@@ -464,7 +464,7 @@ export const $component = (tagName, setupFunction, observedAttributes = []) => {
  * @param {Function} [loading] - Optional signal function to track loading state
  * @returns {Promise<Object|null>} Parsed JSON response or null on error
  */
-export const $fetch = async (url, data, loading) => {
+export const $f = async (url, data, loading) => {
   if (loading) loading(true);
 
   try {
@@ -486,7 +486,7 @@ export const $fetch = async (url, data, loading) => {
  * @param {Array<{path: string|RegExp, component: Function}>} routes - Route configurations
  * @returns {HTMLDivElement} Router container element
  */
-export const $router = (routes) => {
+export const $r = (routes) => {
   /**
    * Gets current path from hash
    * @returns {string} Current path
@@ -502,7 +502,7 @@ export const $router = (routes) => {
     if (currentPath() !== nextPath) currentPath(nextPath);
   });
 
-  $effect(() => {
+  $e(() => {
     const path = currentPath();
     let matchedRoute = null;
     let routeParams = {};
@@ -544,7 +544,7 @@ export const $router = (routes) => {
  * Navigates to a specific route
  * @param {string} path - Target path
  */
-$router.go = (path) => {
+$r.go = (path) => {
   const targetPath = path.startsWith("/") ? path : `/${path}`;
   if (window.location.hash !== `#${targetPath}`) window.location.hash = targetPath;
 };
@@ -556,54 +556,53 @@ $router.go = (path) => {
  * @returns {Object} WebSocket with reactive signals
  */
 export const $ws = (url, options = {}) => {
-  const {
-    reconnect = true,
-    maxReconnect = 5,
-    reconnectInterval = 1000
-  } = options;
+  const { reconnect = true, maxReconnect = 5, reconnectInterval = 1000 } = options;
 
-  const status = $('disconnected');
+  const status = $("disconnected");
   const messages = $([]);
   const error = $(null);
-  
+
   let ws = null;
   let reconnectAttempts = 0;
   let reconnectTimer = null;
 
   const connect = () => {
-    status('connecting');
+    status("connecting");
     ws = new WebSocket(url);
-    
+
     ws.onopen = () => {
-      status('connected');
+      status("connected");
       reconnectAttempts = 0;
       error(null);
     };
-    
+
     ws.onmessage = (e) => {
       messages([...messages(), e.data]);
     };
-    
+
     ws.onerror = (err) => {
       error(err);
-      status('error');
+      status("error");
     };
-    
+
     ws.onclose = () => {
-      status('disconnected');
-      
+      status("disconnected");
+
       if (reconnect && reconnectAttempts < maxReconnect) {
-        reconnectTimer = setTimeout(() => {
-          reconnectAttempts++;
-          connect();
-        }, reconnectInterval * Math.pow(2, reconnectAttempts));
+        reconnectTimer = setTimeout(
+          () => {
+            reconnectAttempts++;
+            connect();
+          },
+          reconnectInterval * Math.pow(2, reconnectAttempts),
+        );
       }
     };
   };
 
   const send = (data) => {
     if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(typeof data === 'string' ? data : JSON.stringify(data));
+      ws.send(typeof data === "string" ? data : JSON.stringify(data));
     }
   };
 
@@ -617,7 +616,7 @@ export const $ws = (url, options = {}) => {
 
   connect();
 
-  if ($effect?.onCleanup) $e.onCleanup(close);
+  if ($e?.onCleanup) $e.onCleanup(close);
 
   return { status, messages, error, send, close };
 };
