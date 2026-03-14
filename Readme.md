@@ -23,17 +23,17 @@ What emerged is a library that proves we've reached a turning point: the web is 
 | **Bundle Size** (gzip) | 🥇 **5.2KB** | 🥈 15KB | 🥉 16.6KB | 20.4KB | 43.9KB |
 | **Time to Interactive** | 🥇 **0.8s** | 🥈 1.3s | 🥉 1.4s | 1.6s | 2.3s |
 | **Initial Render** (ms) | 🥇 **124ms** | 🥈 198ms | 🥉 287ms | 298ms | 452ms |
-| **Update Performance** (ms) | 🥇 **4ms** | 🥈 5ms | 🥈 5ms | 7ms | 18ms |
-| **Memory Usage** (MB) | 🥇 **8.2MB** | 🥈 10.1MB | 🥉 12.4MB | 11.8MB | 18.7MB |
+| **Update Performance** (ms) | 🥇 **4ms** | 🥈 5ms | 🥈 5ms | 🥉 7ms | 18ms |
+| **Memory Usage** (MB) | 🥇 **8.2MB** | 🥈 10.1MB | 12.4MB | 🥉 11.8MB | 18.7MB |
 | **FPS Average** | 🥇 **58.3** | 🥈 58.0 | 🥉 57.3 | 56.0 | 50.0 |
-| **Battery Consumption** | 🥇 **2%** | 🥈 3% | 🥉 4% | 4% | 8% |
-| **Code Splitting** | 🥇 **Zero overhead** | 🥈 Minimal | 🥉 Moderate | Moderate | High |
+| **Battery Consumption** | 🥇 **2%** | 🥈 3% | 🥉 4% | 🥉 4% | 8% |
+| **Code Splitting** | 🥇 **Zero overhead** | 🥈 Minimal | 🥉 Moderate | 🥉 Moderate | High |
 | **Learning Curve** (hours) | 🥇 **2h** | 🥈 20h | 🥉 30h | 40h | 60h |
-| **Dependencies** | 🥇 **0** | 🥈 0 | 🥉 0 | 2 | 5 |
-| **Compilation Required** | 🥇 **No** | 🥈 No | 🥉 Yes | No | No |
-| **Browser Native** | 🥇 **Yes** | 🥈 Partial | 🥉 Partial | Partial | No |
-| **Framework Lock-in** | 🥇 **None** | 🥈 Medium | 🥉 High | Medium | High |
-| **Longevity** (standards-based) | 🥇 **10+ years** | 🥈 5 years | 🥉 3 years | 5 years | 5 years |
+| **Dependencies** | 🥇 0 | 🥇 0 | 🥇 0 | 🥈 2 | 🥉 5 |
+| **Compilation Required** | 🥇 No | 🥇 No | 🥈 Yes | 🥇 No | 🥇 No |
+| **Browser Native** | 🥇 **Yes** | 🥈 Partial | 🥉 Partial | 🥉 Partial | No |
+| **Framework Lock-in** | 🥇 **None** | 🥈 Medium | 🥉 High | 🥈 Medium | 🥉 High |
+| **Longevity** (standards-based) | 🥇 **10+ years** | 🥈 5 years | 🥉 3 years | 🥈 5 years | 🥈 5 years |
 
 ## 🎯 Scientific Conclusion
 
