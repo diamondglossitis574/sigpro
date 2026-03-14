@@ -122,7 +122,7 @@ count(5);
 count(prev => prev + 1); // Use function for previous value
 
 // Read with dependency tracking (inside effect)
-$$(() => {
+$e(() => {
   console.log(count()); // Will be registered as dependency
 });
 ```
@@ -130,7 +130,7 @@ $$(() => {
 #### Computed Signal
 
 ```typescript
-import { $, $$ } from 'sigpro';
+import { $, $e } from 'sigpro';
 
 const firstName = $('John');
 const lastName = $('Doe');
@@ -178,20 +178,20 @@ type Signal<T> = {
 
 ---
 
-### `$$(effect)` - Effects
+### `$e(effect)` - Effects
 
 Executes a function and automatically re-runs it when its dependencies change.
 
 #### Basic Effect
 
 ```typescript
-import { $, $$ } from 'sigpro';
+import { $, $e } from 'sigpro';
 
 const count = $(0);
 const name = $('World');
 
 // Effect runs immediately and on dependency changes
-$$(() => {
+$e(() => {
   console.log(`Count is: ${count()}`); // Only depends on count
 });
 // Log: "Count is: 0"
@@ -205,11 +205,11 @@ name('Universe'); // No log (name is not a dependency)
 #### Effect with Cleanup
 
 ```typescript
-import { $, $$ } from 'sigpro';
+import { $, $e } from 'sigpro';
 
 const userId = $(1);
 
-$$(() => {
+$e(() => {
   const id = userId();
   let isSubscribed = true;
   
@@ -233,17 +233,17 @@ userId(2); // Previous subscription cleaned up, new one created
 #### Nested Effects
 
 ```typescript
-import { $, $$ } from 'sigpro';
+import { $, $e } from 'sigpro';
 
 const show = $(true);
 const count = $(0);
 
-$$(() => {
+$e(() => {
   if (!show()) return;
   
   // This effect is nested inside the conditional
   // It will only be active when show() is true
-  $$(() => {
+  $e(() => {
     console.log('Count changed:', count());
   });
 });
@@ -256,12 +256,12 @@ show(true);  // Inner effect recreated, logs "Count changed: 1"
 #### Manual Effect Control
 
 ```typescript
-import { $, $$ } from 'sigpro';
+import { $, $e } from 'sigpro';
 
 const count = $(0);
 
 // Stop effect manually
-const stop = $$(() => {
+const stop = $e(() => {
   console.log('Effect running:', count());
 });
 
@@ -438,7 +438,7 @@ html`<div class=${className}></div>`
 html`<a href="${href}" class="link ${className}">Link</a>`
 
 // Reactive attributes update when signal changes
-$$(() => {
+$e(() => {
   // The attribute updates automatically
   console.log('Class changed:', className());
 });
@@ -582,16 +582,16 @@ const Page = () => html`
 
 ---
 
-### `$component(tagName, setupFunction, observedAttributes)` - Web Components
+### `$c(tagName, setupFunction, observedAttributes)` - Web Components
 
 Creates Custom Elements with reactive properties. Uses Light DOM (no Shadow DOM) and a slot system based on node filtering.
 
 #### Basic Component
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $c, html } from 'sigpro';
 
-$component('my-counter', (props, context) => {
+$c('my-counter', (props, context) => {
   // props contains signals for each observed attribute
   // context: { slot, emit, host, onUnmount }
   
@@ -628,9 +628,9 @@ Usage:
 #### Component with Named Slots
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $c, html } from 'sigpro';
 
-$component('my-card', (props, { slot }) => {
+$c('my-card', (props, { slot }) => {
   return html`
     <div class="card">
       <div class="header">
@@ -666,9 +666,9 @@ Usage:
 #### Component with Props and Events
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $c, html } from 'sigpro';
 
-$component('todo-item', (props, { emit, host }) => {
+$c('todo-item', (props, { emit, host }) => {
   const handleToggle = () => {
     props.completed(c => !c);
     emit('toggle', { id: props.id(), completed: props.completed() });
@@ -708,13 +708,13 @@ Usage:
 #### Component with Cleanup
 
 ```javascript
-import { $, $component, html, $$ } from 'sigpro';
+import { $, $c, html, $e } from 'sigpro';
 
-$component('timer-widget', (props, { onUnmount }) => {
+$c('timer-widget', (props, { onUnmount }) => {
   const seconds = $(0);
   
   // Effect with automatic cleanup
-  $$(() => {
+  $e(() => {
     const interval = setInterval(() => {
       seconds(s => s + 1);
     }, 1000);
@@ -740,9 +740,9 @@ $component('timer-widget', (props, { onUnmount }) => {
 #### Complete Context API
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $c, html } from 'sigpro';
 
-$component('context-demo', (props, context) => {
+$c('context-demo', (props, context) => {
   // Context properties:
   // - slot(name) - Gets child nodes with matching slot attribute
   // - emit(name, detail) - Dispatches custom event
@@ -784,9 +784,9 @@ $component('context-demo', (props, context) => {
 #### Practical Example: Todo App Component
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $c, html } from 'sigpro';
 
-$component('todo-app', () => {
+$c('todo-app', () => {
   const todos = $([]);
   const newTodo = $('');
   const filter = $('all');
@@ -873,7 +873,7 @@ $component('todo-app', () => {
 }, []);
 ```
 
-#### Key Points About `$component`:
+#### Key Points About `$c`:
 
 1. **Light DOM only** - No Shadow DOM, children are accessible and styleable from outside
 2. **Slot system** - `slot()` function filters child nodes by `slot` attribute
@@ -884,16 +884,16 @@ $component('todo-app', () => {
 
 ---
 
-### `$router(routes)` - Router
+### `$r(routes)` - Router
 
 Hash-based router for SPAs with reactive integration.
 
 #### Basic Routing
 
 ```typescript
-import { $router, html } from 'sigpro';
+import { $r, html } from 'sigpro';
 
-const router = $router([
+const router = $r([
   {
     path: '/',
     component: () => html`
@@ -916,9 +916,9 @@ document.body.appendChild(router);
 #### Route Parameters
 
 ```typescript
-import { $router, html } from 'sigpro';
+import { $r, html } from 'sigpro';
 
-const router = $router([
+const router = $r([
   {
     path: '/user/:id',
     component: (params) => html`
@@ -945,9 +945,9 @@ const router = $router([
 #### Nested Routes
 
 ```typescript
-import { $router, html, $ } from 'sigpro';
+import { $r, html, $ } from 'sigpro';
 
-const router = $router([
+const router = $r([
   {
     path: '/',
     component: () => html`
@@ -961,7 +961,7 @@ const router = $router([
     path: '/dashboard',
     component: () => {
       // Nested router
-      const subRouter = $router([
+      const subRouter = $r([
         {
           path: '/',
           component: () => html`<h2>Dashboard Home</h2>`
@@ -994,19 +994,19 @@ const router = $router([
 #### Route Guards
 
 ```typescript
-import { $router, html, $ } from 'sigpro';
+import { $r, html, $ } from 'sigpro';
 
 const isAuthenticated = $(false);
 
 const requireAuth = (component) => (params) => {
   if (!isAuthenticated()) {
-    $router.go('/login');
+    $r.go('/login');
     return null;
   }
   return component(params);
 };
 
-const router = $router([
+const router = $r([
   {
     path: '/',
     component: () => html`<h1>Public Home</h1>`
@@ -1030,25 +1030,25 @@ const router = $router([
 #### Navigation
 
 ```typescript
-import { $router } from 'sigpro';
+import { $r } from 'sigpro';
 
 // Navigate to path
-$router.go('/user/42');
+$r.go('/user/42');
 
 // Navigate with replace
-$router.go('/dashboard', { replace: true });
+$r.go('/dashboard', { replace: true });
 
 // Go back
-$router.back();
+$r.back();
 
 // Go forward
-$router.forward();
+$r.forward();
 
 // Get current path
-const currentPath = $router.getCurrentPath();
+const currentPath = $r.getCurrentPath();
 
 // Listen to navigation
-$router.listen((path, oldPath) => {
+$r.listen((path, oldPath) => {
   console.log(`Navigated from ${oldPath} to ${path}`);
 });
 ```
@@ -1056,9 +1056,9 @@ $router.listen((path, oldPath) => {
 #### Route Transitions
 
 ```typescript
-import { $router, html, $$ } from 'sigpro';
+import { $r, html, $e } from 'sigpro';
 
-const router = $router([
+const router = $r([
   {
     path: '/',
     component: () => html`<div class="page home">Home</div>`
@@ -1070,7 +1070,7 @@ const router = $router([
 ]);
 
 // Add transitions
-$$(() => {
+$e(() => {
   const currentPath = router.getCurrentPath();
   const pages = document.querySelectorAll('.page');
   
@@ -1092,7 +1092,7 @@ $$(() => {
 ### Real-time Todo Application
 
 ```typescript
-import { $, $$, html, $component } from 'sigpro';
+import { $, $e, html, $c } from 'sigpro';
 
 // Styles
 const styles = html`
@@ -1178,7 +1178,7 @@ const styles = html`
   </style>
 `;
 
-$component('todo-app', () => {
+$c('todo-app', () => {
   // State
   const todos = $(() => {
     const saved = localStorage.getItem('todos');
@@ -1191,7 +1191,7 @@ $component('todo-app', () => {
   const editText = $('');
   
   // Save to localStorage on changes
-  $$(() => {
+  $e(() => {
     localStorage.setItem('todos', JSON.stringify(todos()));
   });
   
@@ -1363,7 +1363,7 @@ $component('todo-app', () => {
 ### Data Dashboard with Real-time Updates
 
 ```typescript
-import { $, $$, html, $component } from 'sigpro';
+import { $, $e, html, $c } from 'sigpro';
 
 // Simulated WebSocket connection
 class DataStream {
@@ -1389,14 +1389,14 @@ class DataStream {
   }
 }
 
-$component('data-dashboard', () => {
+$c('data-dashboard', () => {
   const stream = new DataStream();
   const dataPoints = $([]);
   const selectedCategory = $('all');
   const timeWindow = $(60); // seconds
   
   // Subscribe to data stream
-  $$(() => {
+  $e(() => {
     const unsubscribe = stream.subscribe((newData) => {
       dataPoints(prev => {
         const updated = [...prev, newData];
@@ -1501,14 +1501,14 @@ $component('data-dashboard', () => {
 ### Custom Hooks
 
 ```typescript
-import { $, $$ } from 'sigpro';
+import { $, $e } from 'sigpro';
 
 // useLocalStorage hook
 function useLocalStorage(key, initialValue) {
   const stored = localStorage.getItem(key);
   const signal = $(stored ? JSON.parse(stored) : initialValue);
   
-  $$(() => {
+  $e(() => {
     localStorage.setItem(key, JSON.stringify(signal()));
   });
   
@@ -1520,7 +1520,7 @@ function useDebounce(signal, delay) {
   const debounced = $(signal());
   let timeout;
   
-  $$(() => {
+  $e(() => {
     const value = signal();
     clearTimeout(timeout);
     timeout = setTimeout(() => {
