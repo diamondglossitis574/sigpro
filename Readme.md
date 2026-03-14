@@ -178,6 +178,94 @@ type Signal<T> = {
 
 ---
 
+## 💾 `$$(key, initialValue, [storage])` - Persistent Signal
+Signal that automatically syncs with localStorage or sessionStorage.
+
+### Basic Persistent State
+```js
+import { $$ } from 'sigpro';
+
+// Automatically saves to localStorage
+const theme = $$('theme', 'light');
+const user = $$('user', null);
+
+theme('dark'); // Saved to localStorage
+// Page refresh... theme() returns 'dark'
+```
+
+### Session Storage
+```js
+// Use sessionStorage instead
+const tempData = $$('temp', {}, sessionStorage);
+```
+
+### Real-World Example
+```js
+import { $$, html } from 'sigpro';
+
+// User preferences persist across sessions
+const settings = $$('app-settings', {
+  darkMode: false,
+  fontSize: 16,
+  language: 'en'
+});
+
+// Auto-saves on any change
+const toggleDarkMode = () => {
+  settings({
+    ...settings(),
+    darkMode: !settings().darkMode
+  });
+};
+
+const view = html`
+  <div class="${() => settings().darkMode ? 'dark' : 'light'}">
+    <button @click=${toggleDarkMode}>
+      Toggle Dark Mode
+    </button>
+    <span>Current: ${() => settings().darkMode ? '🌙' : '☀️'}</span>
+  </div>
+`;
+```
+
+### Shopping Cart Example
+```js
+import { $$, html } from 'sigpro';
+
+const cart = $$('shopping-cart', []);
+
+const addToCart = (item) => {
+  cart([...cart(), item]);
+};
+
+const CartView = html`
+  <div>
+    <h3>Cart (${() => cart().length} items)</h3>
+    <ul>
+      ${() => cart().map(item => html`
+        <li>${item.name} - $${item.price}</li>
+      `)}
+    </ul>
+    <button @click=${() => cart([])}>Clear Cart</button>
+  </div>
+`;
+```
+
+### Auto-Cleanup
+```js
+// Remove from storage when value is null/undefined
+$$('temp', null); // Removes 'temp' from storage
+```
+
+**Parameters:**
+- `key`: Storage key name
+- `initialValue`: Default value if none stored
+- `storage`: Storage type (default: `localStorage`, options: `sessionStorage`)
+
+**Returns:** Signal function that persists to storage on changes
+
+---
+
 ### `$e(effect)` - Effects
 
 Executes a function and automatically re-runs it when its dependencies change.
@@ -274,6 +362,151 @@ count(2); // No log
 - `effect`: Function to execute. Can return a cleanup function
 
 **Returns:** Function to stop the effect
+
+---
+
+## 📡 `$f(data, url, [loading])` - Fetch
+Simple fetch wrapper with automatic JSON handling and optional loading signal. Perfect for API calls.
+
+### Basic Fetch
+```js
+import { $, $f } from 'sigpro';
+
+const userData = $(null);
+
+// Simple POST request
+const result = await $f('/api/users', { name: 'John' });
+```
+
+### Fetch with Loading State
+```js
+import { $, $f } from 'sigpro';
+
+const loading = $(false);
+const userData = $(null);
+
+async function loadUser(id) {
+  const data = await $f(`/api/users/${id}`, null, loading);
+  if (data) userData(data);
+}
+
+// Loading() automatically toggles true/false
+loadUser(123);
+
+// In your UI
+html`
+  <div>
+    ${() => loading() ? 'Loading...' : userData()?.name}
+  </div>
+`;
+```
+
+### Error Handling
+```js
+const data = await $f('/api/users', { id: 123 });
+if (!data) {
+  // Handle error silently (returns null on failure)
+  console.error('Request failed');
+}
+```
+
+**Parameters:**
+- `url`: Endpoint URL
+- `data`: Data to send (auto JSON.stringify'd)
+- `loading`: Optional signal function to track loading state
+
+**Returns:** `Promise<Object|null>` - Parsed JSON response or null on error
+
+---
+
+## 🔌 `$ws(url, [options])` - WebSocket
+Reactive WebSocket wrapper with automatic reconnection and signal-based state management.
+
+### Basic WebSocket
+```js
+import { $ws } from 'sigpro';
+
+const socket = $ws('wss://echo.websocket.org');
+
+// Reactive status (disconnected/connecting/connected/error)
+socket.status() // 'connected'
+
+// Incoming messages as reactive array
+socket.messages() // ['Hello', 'World']
+
+// Send messages
+socket.send('Hello Server!');
+socket.send({ type: 'ping', data: 'test' });
+```
+
+### Auto-Reconnect Configuration
+```js
+const socket = $ws('wss://api.example.com', {
+  reconnect: true,              // Enable auto-reconnect
+  maxReconnect: 5,               // Max attempts (default: 5)
+  reconnectInterval: 1000        // Base interval in ms (uses exponential backoff)
+});
+```
+
+### Reactive UI Integration
+```js
+import { $ws, html } from 'sigpro';
+
+const chat = $ws('wss://chat.example.com');
+
+const view = html`
+  <div>
+    <!-- Connection status -->
+    <div class="status ${() => chat.status()}">
+      Status: ${() => chat.status()}
+    </div>
+    
+    <!-- Error display -->
+    ${() => chat.error() ? html`<div class="error">Connection failed</div>` : ''}
+    
+    <!-- Messages list -->
+    <ul>
+      ${() => chat.messages().map(msg => html`<li>${msg}</li>`)}
+    </ul>
+    
+    <!-- Send message -->
+    <input :value=${() => ''} @keydown.enter=${(e) => {
+      chat.send(e.target.value);
+      e.target.value = '';
+    }}/>
+  </div>
+`;
+```
+
+### Manual Control
+```js
+const socket = $ws('wss://api.example.com');
+
+// Send data
+socket.send({ action: 'subscribe', channel: 'updates' });
+
+// Close connection manually
+socket.close();
+
+// Check connection status
+if (socket.status() === 'connected') {
+  // Do something
+}
+```
+
+**Parameters:**
+- `url`: WebSocket server URL
+- `options`: Configuration object
+  - `reconnect`: Enable auto-reconnect (default: true)
+  - `maxReconnect`: Maximum reconnection attempts (default: 5)
+  - `reconnectInterval`: Base interval for exponential backoff (default: 1000ms)
+
+**Returns:** Object with reactive properties and methods
+- `status`: Signal with connection state
+- `messages`: Signal array of received messages
+- `error`: Signal with last error
+- `send(data)`: Function to send data
+- `close()`: Function to close connection
 
 ---
 
