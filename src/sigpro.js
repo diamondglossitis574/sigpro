@@ -9,15 +9,28 @@ let isFlushScheduled = false;
  * Flushes all pending effects in the queue
  * Executes all queued jobs and clears the queue
  */
+let flushCount = 0;
+
 const flushEffectQueue = () => {
   isFlushScheduled = false;
-  try {
-    for (const effect of effectQueue) {
-      effect.run();
-    }
+  flushCount++;
+
+  if (flushCount > 100) {
     effectQueue.clear();
+    flushCount = 0;
+    throw new Error("SigPro: Infinite reactive loop detected.");
+  }
+
+  try {
+    const effects = Array.from(effectQueue);
+    effectQueue.clear();
+    for (const effect of effects) effect.run();
   } catch (error) {
     console.error("SigPro Flush Error:", error);
+  } finally {
+    setTimeout(() => {
+      flushCount = 0;
+    }, 0);
   }
 };
 
@@ -143,17 +156,32 @@ export const $effect = (effectFn) => {
  * @returns {Function} Signal that persists to storage
  */
 export const $storage = (key, initialValue, storage = localStorage) => {
-  // Load saved value
-  const saved = storage.getItem(key);
-  const signal = $(saved !== null ? JSON.parse(saved) : initialValue);
-
-  // Auto-save on changes
-  $effect(() => {
-    const value = signal();
-    if (value === undefined || value === null) {
-      storage.removeItem(key);
+  let initial;
+  try {
+    const saved = storage.getItem(key);
+    if (saved !== null) {
+      initial = JSON.parse(saved);
     } else {
-      storage.setItem(key, JSON.stringify(value));
+      initial = initialValue;
+    }
+  } catch (e) {
+    console.warn(`Error reading ${key} from storage:`, e);
+    initial = initialValue;
+    storage.removeItem(key);
+  }
+
+  const signal = $(initial);
+
+  $effect(() => {
+    try {
+      const value = signal();
+      if (value === undefined || value === null) {
+        storage.removeItem(key);
+      } else {
+        storage.setItem(key, JSON.stringify(value));
+      }
+    } catch (e) {
+      console.warn(`Error saving ${key} to storage:`, e);
     }
   });
 
@@ -165,6 +193,7 @@ export const $storage = (key, initialValue, storage = localStorage) => {
  * @param {string[]} strings - Template strings
  * @param {...any} values - Dynamic values
  * @returns {DocumentFragment} Reactive document fragment
+ * @see {@link https://developer.mozilla.org/es/docs/Glossary/Cross-site_scripting}
  */
 export const html = (strings, ...values) => {
   const templateCache = html._templateCache ?? (html._templateCache = new WeakMap());
@@ -204,11 +233,13 @@ export const html = (strings, ...values) => {
 
           if (typeof result !== "object" && !Array.isArray(result)) {
             const textNode = startMarker.nextSibling;
+            const safeText = String(result ?? "");
+
             if (textNode !== endMarker && textNode?.nodeType === 3) {
-              textNode.textContent = result ?? "";
+              textNode.textContent = safeText;
             } else {
               while (startMarker.nextSibling !== endMarker) parent.removeChild(startMarker.nextSibling);
-              parent.insertBefore(document.createTextNode(result ?? ""), endMarker);
+              parent.insertBefore(document.createTextNode(safeText), endMarker);
             }
             return;
           }
@@ -473,12 +504,24 @@ export const $fetch = async (url, data, loading) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return await res.json();
+
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.warn("Invalid JSON response");
+      return null;
+    }
   } catch (e) {
     return null;
   } finally {
     if (loading) loading(false);
   }
+};
+
+const sanitizePath = (path) => {
+  // Eliminar cualquier intento de HTML/JavaScript
+  return String(path).replace(/[<>"']/g, "");
 };
 
 /**
@@ -498,7 +541,7 @@ export const $router = (routes) => {
   container.style.display = "contents";
 
   window.addEventListener("hashchange", () => {
-    const nextPath = getCurrentPath();
+    const nextPath = sanitizePath(getCurrentPath());
     if (currentPath() !== nextPath) currentPath(nextPath);
   });
 
@@ -525,11 +568,7 @@ export const $router = (routes) => {
     activeEffect = null;
 
     try {
-      const view = matchedRoute
-        ? matchedRoute.component(routeParams)
-        : html`
-            <h1>404</h1>
-          `;
+      const view = matchedRoute ? matchedRoute.component(routeParams) : Object.assign(document.createElement("h1"), { textContent: "404" });
 
       container.replaceChildren(view instanceof Node ? view : document.createTextNode(view ?? ""));
     } finally {
@@ -577,7 +616,8 @@ export const $ws = (url, options = {}) => {
     };
 
     ws.onmessage = (e) => {
-      messages([...messages(), e.data]);
+      const data = e.data;
+      messages([...messages(), data]);
     };
 
     ws.onerror = (err) => {
