@@ -96,6 +96,53 @@ html`
 `
 ```
 
+# SigPro API - Quick Reference
+
+## Option 1: Individual Imports
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| **`$`** | Reactive signal (getter/setter) | `const count = $(0); count(5); count()` |
+| **`$effect`** | Runs effect when dependencies change | `$effect(() => console.log(count()))` |
+| **`$component`** | Creates reactive Web Component | `$component('my-menu', setup, ['items'])` |
+| **`$fetch`** | Fetch wrapper with loading signal | `const data = await $fetch('/api', data, loading)` |
+| **`$router`** | Hash-based router with params | `$router([{path:'/', component:Home}])` |
+| **`$ws`** | WebSocket with reactive state | `const {status, messages} = $ws(url)` |
+| **`$storage`** | Persistent signal (localStorage) | `const theme = $storage('theme', 'light')` |
+| **`html`** | Template literal for reactive HTML | `` html`<div>${count}</div>` `` |
+
+```javascript
+import { $, $effect, $component, $fetch, $router, $ws, $storage, html } from "@core";
+```
+
+---
+
+## Option 2: Single Import with Namespace
+
+| Function | Equivalent | Description |
+|----------|------------|-------------|
+| **`$()`** | `$()` | Reactive signal (getter/setter) |
+| **`$.effect()`** | `$effect()` | Runs effect when dependencies change |
+| **`$.component()`** | `$component()` | Creates reactive Web Component |
+| **`$.fetch()`** | `$fetch()` | Fetch wrapper with loading signal |
+| **`$.router()`** | `$router()` | Hash-based router with params |
+| **`$.ws()`** | `$ws()` | WebSocket with reactive state |
+| **`$.storage()`** | `$storage()` | Persistent signal (localStorage) |
+| **`html`** | `html` | Template literal for reactive HTML |
+
+```javascript
+import { $, html } from "@core";
+// Everything available via $.methodName
+// Example: $.effect() instead of $effect()
+```
+
+---
+
+## Both approaches are valid and work the same
+Choose the one you prefer: `$effect()` or `$.effect()`
+
+---
+
 ## 📚 API Reference
 
 ---
