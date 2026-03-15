@@ -69,7 +69,7 @@ copy "sigpro.js" file where you want to use it.
 
 ## 🎯 Philosophy
 
-SigPro (Signal Professional) embraces the web platform. Built on top of Custom Elements and reactive proxies, it offers a development experience similar to modern frameworks but with a minimal footprint and zero dependencies.
+SigPro (Signal Professional) embraces the web platform. Built on top of Custom Elements and reactive signals, it offers a development experience similar to modern frameworks but with a minimal footprint and zero dependencies.
 
 **Core Principles:**
 - 📡 **True Reactivity** - Automatic dependency tracking, no manual subscriptions
