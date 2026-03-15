@@ -120,7 +120,7 @@ count(5);
 count(prev => prev + 1); // Use function for previous value
 
 // Read with dependency tracking (inside effect)
-$e(() => {
+$effect(() => {
   console.log(count()); // Will be registered as dependency
 });
 ```
@@ -128,7 +128,7 @@ $e(() => {
 #### Computed Signal
 
 ```typescript
-import { $, $e } from 'sigpro';
+import { $, $effect } from 'sigpro';
 
 const firstName = $('John');
 const lastName = $('Doe');
@@ -176,16 +176,16 @@ type Signal<T> = {
 
 ---
 
-## 💾 `$$(key, initialValue, [storage])` - Persistent Signal
+## 💾 `$storage(key, initialValue, [storage])` - Persistent Signal
 Signal that automatically syncs with localStorage or sessionStorage.
 
 ### Basic Persistent State
 ```js
-import { $$ } from 'sigpro';
+import { $storage } from 'sigpro';
 
 // Automatically saves to localStorage
-const theme = $$('theme', 'light');
-const user = $$('user', null);
+const theme = $storage('theme', 'light');
+const user = $storage('user', null);
 
 theme('dark'); // Saved to localStorage
 // Page refresh... theme() returns 'dark'
@@ -194,15 +194,15 @@ theme('dark'); // Saved to localStorage
 ### Session Storage
 ```js
 // Use sessionStorage instead
-const tempData = $$('temp', {}, sessionStorage);
+const tempData = $storage('temp', {}, sessionStorage);
 ```
 
 ### Real-World Example
 ```js
-import { $$, html } from 'sigpro';
+import { $storage, html } from 'sigpro';
 
 // User preferences persist across sessions
-const settings = $$('app-settings', {
+const settings = $storage('app-settings', {
   darkMode: false,
   fontSize: 16,
   language: 'en'
@@ -228,9 +228,9 @@ const view = html`
 
 ### Shopping Cart Example
 ```js
-import { $$, html } from 'sigpro';
+import { $storage, html } from 'sigpro';
 
-const cart = $$('shopping-cart', []);
+const cart = $storage('shopping-cart', []);
 
 const addToCart = (item) => {
   cart([...cart(), item]);
@@ -241,7 +241,7 @@ const CartView = html`
     <h3>Cart (${() => cart().length} items)</h3>
     <ul>
       ${() => cart().map(item => html`
-        <li>${item.name} - $${item.price}</li>
+        <li>${item.name} - $storage{item.price}</li>
       `)}
     </ul>
     <button @click=${() => cart([])}>Clear Cart</button>
@@ -252,7 +252,7 @@ const CartView = html`
 ### Auto-Cleanup
 ```js
 // Remove from storage when value is null/undefined
-$$('temp', null); // Removes 'temp' from storage
+$storage('temp', null); // Removes 'temp' from storage
 ```
 
 **Parameters:**
@@ -264,20 +264,20 @@ $$('temp', null); // Removes 'temp' from storage
 
 ---
 
-### `$e(effect)` - Effects
+### `$effectffect(effect)` - Effects
 
 Executes a function and automatically re-runs it when its dependencies change.
 
 #### Basic Effect
 
 ```typescript
-import { $, $e } from 'sigpro';
+import { $, $effectffect } from 'sigpro';
 
 const count = $(0);
 const name = $('World');
 
 // Effect runs immediately and on dependency changes
-$e(() => {
+$effectffect(() => {
   console.log(`Count is: ${count()}`); // Only depends on count
 });
 // Log: "Count is: 0"
@@ -291,11 +291,11 @@ name('Universe'); // No log (name is not a dependency)
 #### Effect with Cleanup
 
 ```typescript
-import { $, $e } from 'sigpro';
+import { $, $effectffect } from 'sigpro';
 
 const userId = $(1);
 
-$e(() => {
+$effectffect(() => {
   const id = userId();
   let isSubscribed = true;
   
@@ -319,17 +319,17 @@ userId(2); // Previous subscription cleaned up, new one created
 #### Nested Effects
 
 ```typescript
-import { $, $e } from 'sigpro';
+import { $, $effectffect } from 'sigpro';
 
 const show = $(true);
 const count = $(0);
 
-$e(() => {
+$effectffect(() => {
   if (!show()) return;
   
   // This effect is nested inside the conditional
   // It will only be active when show() is true
-  $e(() => {
+  $effectffect(() => {
     console.log('Count changed:', count());
   });
 });
@@ -342,12 +342,12 @@ show(true);  // Inner effect recreated, logs "Count changed: 1"
 #### Manual Effect Control
 
 ```typescript
-import { $, $e } from 'sigpro';
+import { $, $effectffect } from 'sigpro';
 
 const count = $(0);
 
 // Stop effect manually
-const stop = $e(() => {
+const stop = $effectffect(() => {
   console.log('Effect running:', count());
 });
 
@@ -363,28 +363,28 @@ count(2); // No log
 
 ---
 
-## 📡 `$f(data, url, [loading])` - Fetch
+## 📡 `$fetch(data, url, [loading])` - Fetch
 Simple fetch wrapper with automatic JSON handling and optional loading signal. Perfect for API calls.
 
 ### Basic Fetch
 ```js
-import { $, $f } from 'sigpro';
+import { $, $fetch } from 'sigpro';
 
 const userData = $(null);
 
 // Simple POST request
-const result = await $f('/api/users', { name: 'John' });
+const result = await $fetch('/api/users', { name: 'John' });
 ```
 
 ### Fetch with Loading State
 ```js
-import { $, $f } from 'sigpro';
+import { $, $fetch } from 'sigpro';
 
 const loading = $(false);
 const userData = $(null);
 
 async function loadUser(id) {
-  const data = await $f(`/api/users/${id}`, null, loading);
+  const data = await $fetch(`/api/users/${id}`, null, loading);
   if (data) userData(data);
 }
 
@@ -401,7 +401,7 @@ html`
 
 ### Error Handling
 ```js
-const data = await $f('/api/users', { id: 123 });
+const data = await $fetch('/api/users', { id: 123 });
 if (!data) {
   // Handle error silently (returns null on failure)
   console.error('Request failed');
@@ -669,7 +669,7 @@ html`<div class=${className}></div>`
 html`<a href="${href}" class="link ${className}">Link</a>`
 
 // Reactive attributes update when signal changes
-$e(() => {
+$effectffect(() => {
   // The attribute updates automatically
   console.log('Class changed:', className());
 });
@@ -813,16 +813,16 @@ const Page = () => html`
 
 ---
 
-### `$c(tagName, setupFunction, observedAttributes)` - Web Components
+### `$component(tagName, setupFunction, observedAttributes)` - Web Components
 
 Creates Custom Elements with reactive properties. Uses Light DOM (no Shadow DOM) and a slot system based on node filtering.
 
 #### Basic Component
 
 ```javascript
-import { $, $c, html } from 'sigpro';
+import { $, $component, html } from 'sigpro';
 
-$c('my-counter', (props, context) => {
+$component('my-counter', (props, context) => {
   // props contains signals for each observed attribute
   // context: { slot, emit, host, onUnmount }
   
@@ -859,9 +859,9 @@ Usage:
 #### Component with Named Slots
 
 ```javascript
-import { $, $c, html } from 'sigpro';
+import { $, $component, html } from 'sigpro';
 
-$c('my-card', (props, { slot }) => {
+$component('my-card', (props, { slot }) => {
   return html`
     <div class="card">
       <div class="header">
@@ -897,9 +897,9 @@ Usage:
 #### Component with Props and Events
 
 ```javascript
-import { $, $c, html } from 'sigpro';
+import { $, $component, html } from 'sigpro';
 
-$c('todo-item', (props, { emit, host }) => {
+$component('todo-item', (props, { emit, host }) => {
   const handleToggle = () => {
     props.completed(c => !c);
     emit('toggle', { id: props.id(), completed: props.completed() });
@@ -939,13 +939,13 @@ Usage:
 #### Component with Cleanup
 
 ```javascript
-import { $, $c, html, $e } from 'sigpro';
+import { $, $component, html, $effect } from 'sigpro';
 
-$c('timer-widget', (props, { onUnmount }) => {
+$component('timer-widget', (props, { onUnmount }) => {
   const seconds = $(0);
   
   // Effect with automatic cleanup
-  $e(() => {
+  $effect(() => {
     const interval = setInterval(() => {
       seconds(s => s + 1);
     }, 1000);
@@ -971,9 +971,9 @@ $c('timer-widget', (props, { onUnmount }) => {
 #### Complete Context API
 
 ```javascript
-import { $, $c, html } from 'sigpro';
+import { $, $component, html } from 'sigpro';
 
-$c('context-demo', (props, context) => {
+$component('context-demo', (props, context) => {
   // Context properties:
   // - slot(name) - Gets child nodes with matching slot attribute
   // - emit(name, detail) - Dispatches custom event
@@ -1015,9 +1015,9 @@ $c('context-demo', (props, context) => {
 #### Practical Example: Todo App Component
 
 ```javascript
-import { $, $c, html } from 'sigpro';
+import { $, $component, html } from 'sigpro';
 
-$c('todo-app', () => {
+$component('todo-app', () => {
   const todos = $([]);
   const newTodo = $('');
   const filter = $('all');
@@ -1104,7 +1104,7 @@ $c('todo-app', () => {
 }, []);
 ```
 
-#### Key Points About `$c`:
+#### Key Points About `$component`:
 
 1. **Light DOM only** - No Shadow DOM, children are accessible and styleable from outside
 2. **Slot system** - `slot()` function filters child nodes by `slot` attribute
@@ -1115,16 +1115,16 @@ $c('todo-app', () => {
 
 ---
 
-### `$r(routes)` - Router
+### `$router(routes)` - Router
 
 Hash-based router for SPAs with reactive integration.
 
 #### Basic Routing
 
 ```typescript
-import { $r, html } from 'sigpro';
+import { $router, html } from 'sigpro';
 
-const router = $r([
+const router = $router([
   {
     path: '/',
     component: () => html`
@@ -1147,9 +1147,9 @@ document.body.appendChild(router);
 #### Route Parameters
 
 ```typescript
-import { $r, html } from 'sigpro';
+import { $router, html } from 'sigpro';
 
-const router = $r([
+const router = $router([
   {
     path: '/user/:id',
     component: (params) => html`
@@ -1176,9 +1176,9 @@ const router = $r([
 #### Nested Routes
 
 ```typescript
-import { $r, html, $ } from 'sigpro';
+import { $router, html, $ } from 'sigpro';
 
-const router = $r([
+const router = $router([
   {
     path: '/',
     component: () => html`
@@ -1192,7 +1192,7 @@ const router = $r([
     path: '/dashboard',
     component: () => {
       // Nested router
-      const subRouter = $r([
+      const subRouter = $router([
         {
           path: '/',
           component: () => html`<h2>Dashboard Home</h2>`
@@ -1225,19 +1225,19 @@ const router = $r([
 #### Route Guards
 
 ```typescript
-import { $r, html, $ } from 'sigpro';
+import { $router, html, $ } from 'sigpro';
 
 const isAuthenticated = $(false);
 
 const requireAuth = (component) => (params) => {
   if (!isAuthenticated()) {
-    $r.go('/login');
+    $router.go('/login');
     return null;
   }
   return component(params);
 };
 
-const router = $r([
+const router = $router([
   {
     path: '/',
     component: () => html`<h1>Public Home</h1>`
@@ -1261,25 +1261,25 @@ const router = $r([
 #### Navigation
 
 ```typescript
-import { $r } from 'sigpro';
+import { $router } from 'sigpro';
 
 // Navigate to path
-$r.go('/user/42');
+$router.go('/user/42');
 
 // Navigate with replace
-$r.go('/dashboard', { replace: true });
+$router.go('/dashboard', { replace: true });
 
 // Go back
-$r.back();
+$router.back();
 
 // Go forward
-$r.forward();
+$router.forward();
 
 // Get current path
-const currentPath = $r.getCurrentPath();
+const currentPath = $router.getCurrentPath();
 
 // Listen to navigation
-$r.listen((path, oldPath) => {
+$router.listen((path, oldPath) => {
   console.log(`Navigated from ${oldPath} to ${path}`);
 });
 ```
@@ -1287,9 +1287,9 @@ $r.listen((path, oldPath) => {
 #### Route Transitions
 
 ```typescript
-import { $r, html, $e } from 'sigpro';
+import { $router, html, $effect } from 'sigpro';
 
-const router = $r([
+const router = $router([
   {
     path: '/',
     component: () => html`<div class="page home">Home</div>`
@@ -1301,7 +1301,7 @@ const router = $r([
 ]);
 
 // Add transitions
-$e(() => {
+$effect(() => {
   const currentPath = router.getCurrentPath();
   const pages = document.querySelectorAll('.page');
   
