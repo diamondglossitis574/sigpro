@@ -112,7 +112,7 @@ html`
 | **`html`** | Template literal for reactive HTML | `` html`<div>${count}</div>` `` |
 
 ```javascript
-import { $, $effect, $component, $fetch, $router, $ws, $storage, html } from "@core";
+import { $, $effect, $component, $fetch, $router, $ws, $storage, html } from "sigpro";
 ```
 
 ---
@@ -131,7 +131,7 @@ import { $, $effect, $component, $fetch, $router, $ws, $storage, html } from "@c
 | **`html`** | `html` | Template literal for reactive HTML |
 
 ```javascript
-import { $, html } from "@core";
+import { $, html } from "sigpro";
 // Everything available via $.methodName
 // Example: $.effect() instead of $effect()
 ```
