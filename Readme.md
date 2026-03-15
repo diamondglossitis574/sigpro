@@ -2,7 +2,7 @@
 
 A minimalist reactive library for building web interfaces with signals, effects, and native web components. No compilation, no virtual DOM, just pure JavaScript and intelligent reactivity.
 
-**~2KB** gzipped ⚡
+**~3KB** gzipped ⚡
 
 
 [![npm version](https://img.shields.io/npm/v/sigpro.svg)](https://www.npmjs.com/package/sigpro)
@@ -101,48 +101,20 @@ html`
 
 # SigPro API - Quick Reference
 
-## Option 1: Individual Imports
-
 | Function | Description | Example |
 |----------|-------------|---------|
 | **`$`** | Reactive signal (getter/setter) | `const count = $(0); count(5); count()` |
-| **`$effect`** | Runs effect when dependencies change | `$effect(() => console.log(count()))` |
-| **`$component`** | Creates reactive Web Component | `$component('my-menu', setup, ['items'])` |
-| **`$fetch`** | Fetch wrapper with loading signal | `const data = await $fetch('/api', data, loading)` |
-| **`$router`** | Hash-based router with params | `$router([{path:'/', component:Home}])` |
-| **`$ws`** | WebSocket with reactive state | `const {status, messages} = $ws(url)` |
-| **`$storage`** | Persistent signal (localStorage) | `const theme = $storage('theme', 'light')` |
+| **`$.effect`** | Runs effect when dependencies change | `$.effect(() => console.log(count()))` |
+| **`$.component`** | Creates reactive Web Component | `$.component('my-menu', setup, ['items'])` |
+| **`$.fetch`** | Fetch wrapper with loading signal | `const data = await $.fetch('/api', data, loading)` |
+| **`$.router`** | Hash-based router with params | `$.router([{path:'/', component:Home}])` |
+| **`$.ws`** | WebSocket with reactive state | `const {status, messages} = $.ws(url)` |
+| **`$.storage`** | Persistent signal (localStorage) | `const theme = $.storage('theme', 'light')` |
 | **`html`** | Template literal for reactive HTML | `` html`<div>${count}</div>` `` |
 
 ```javascript
-import { $, $effect, $component, $fetch, $router, $ws, $storage, html } from "sigpro";
-```
-
----
-
-## Option 2: Single Import with Namespace
-
-| Function | Equivalent | Description |
-|----------|------------|-------------|
-| **`$()`** | `$()` | Reactive signal (getter/setter) |
-| **`$.effect()`** | `$effect()` | Runs effect when dependencies change |
-| **`$.component()`** | `$component()` | Creates reactive Web Component |
-| **`$.fetch()`** | `$fetch()` | Fetch wrapper with loading signal |
-| **`$.router()`** | `$router()` | Hash-based router with params |
-| **`$.ws()`** | `$ws()` | WebSocket with reactive state |
-| **`$.storage()`** | `$storage()` | Persistent signal (localStorage) |
-| **`html`** | `html` | Template literal for reactive HTML |
-
-```javascript
 import { $, html } from "sigpro";
-// Everything available via $.methodName
-// Example: $.effect() instead of $effect()
 ```
-
----
-
-## Both approaches are valid and work the same
-Choose the one you prefer: `$effect()` or `$.effect()`
 
 ---
 
@@ -170,7 +142,7 @@ count(5);
 count(prev => prev + 1); // Use function for previous value
 
 // Read with dependency tracking (inside effect)
-$effect(() => {
+$.effect(() => {
   console.log(count()); // Will be registered as dependency
 });
 ```
@@ -178,7 +150,7 @@ $effect(() => {
 #### Computed Signal
 
 ```typescript
-import { $, $effect } from 'sigpro';
+import { $, $.effect } from 'sigpro';
 
 const firstName = $('John');
 const lastName = $('Doe');
@@ -226,16 +198,16 @@ type Signal<T> = {
 
 ---
 
-## 💾 `$storage(key, initialValue, [storage])` - Persistent Signal
+## 💾 `$.storage(key, initialValue, [storage])` - Persistent Signal
 Signal that automatically syncs with localStorage or sessionStorage.
 
 ### Basic Persistent State
 ```js
-import { $storage } from 'sigpro';
+import { $.storage } from 'sigpro';
 
 // Automatically saves to localStorage
-const theme = $storage('theme', 'light');
-const user = $storage('user', null);
+const theme = $.storage('theme', 'light');
+const user = $.storage('user', null);
 
 theme('dark'); // Saved to localStorage
 // Page refresh... theme() returns 'dark'
@@ -244,15 +216,15 @@ theme('dark'); // Saved to localStorage
 ### Session Storage
 ```js
 // Use sessionStorage instead
-const tempData = $storage('temp', {}, sessionStorage);
+const tempData = $.storage('temp', {}, sessionStorage);
 ```
 
 ### Real-World Example
 ```js
-import { $storage, html } from 'sigpro';
+import { $.storage, html } from 'sigpro';
 
 // User preferences persist across sessions
-const settings = $storage('app-settings', {
+const settings = $.storage('app-settings', {
   darkMode: false,
   fontSize: 16,
   language: 'en'
@@ -278,9 +250,9 @@ const view = html`
 
 ### Shopping Cart Example
 ```js
-import { $storage, html } from 'sigpro';
+import { $.storage, html } from 'sigpro';
 
-const cart = $storage('shopping-cart', []);
+const cart = $.storage('shopping-cart', []);
 
 const addToCart = (item) => {
   cart([...cart(), item]);
@@ -291,7 +263,7 @@ const CartView = html`
     <h3>Cart (${() => cart().length} items)</h3>
     <ul>
       ${() => cart().map(item => html`
-        <li>${item.name} - $storage{item.price}</li>
+        <li>${item.name} - $.storage{item.price}</li>
       `)}
     </ul>
     <button @click=${() => cart([])}>Clear Cart</button>
@@ -302,7 +274,7 @@ const CartView = html`
 ### Auto-Cleanup
 ```js
 // Remove from storage when value is null/undefined
-$storage('temp', null); // Removes 'temp' from storage
+$.storage('temp', null); // Removes 'temp' from storage
 ```
 
 **Parameters:**
@@ -314,20 +286,20 @@ $storage('temp', null); // Removes 'temp' from storage
 
 ---
 
-### `$effectffect(effect)` - Effects
+### `$.effectffect(effect)` - Effects
 
 Executes a function and automatically re-runs it when its dependencies change.
 
 #### Basic Effect
 
 ```typescript
-import { $, $effectffect } from 'sigpro';
+import { $, $.effectffect } from 'sigpro';
 
 const count = $(0);
 const name = $('World');
 
 // Effect runs immediately and on dependency changes
-$effectffect(() => {
+$.effectffect(() => {
   console.log(`Count is: ${count()}`); // Only depends on count
 });
 // Log: "Count is: 0"
@@ -341,11 +313,11 @@ name('Universe'); // No log (name is not a dependency)
 #### Effect with Cleanup
 
 ```typescript
-import { $, $effectffect } from 'sigpro';
+import { $, $.effectffect } from 'sigpro';
 
 const userId = $(1);
 
-$effectffect(() => {
+$.effectffect(() => {
   const id = userId();
   let isSubscribed = true;
   
@@ -369,17 +341,17 @@ userId(2); // Previous subscription cleaned up, new one created
 #### Nested Effects
 
 ```typescript
-import { $, $effectffect } from 'sigpro';
+import { $, $.effectffect } from 'sigpro';
 
 const show = $(true);
 const count = $(0);
 
-$effectffect(() => {
+$.effectffect(() => {
   if (!show()) return;
   
   // This effect is nested inside the conditional
   // It will only be active when show() is true
-  $effectffect(() => {
+  $.effectffect(() => {
     console.log('Count changed:', count());
   });
 });
@@ -392,12 +364,12 @@ show(true);  // Inner effect recreated, logs "Count changed: 1"
 #### Manual Effect Control
 
 ```typescript
-import { $, $effectffect } from 'sigpro';
+import { $, $.effectffect } from 'sigpro';
 
 const count = $(0);
 
 // Stop effect manually
-const stop = $effectffect(() => {
+const stop = $.effectffect(() => {
   console.log('Effect running:', count());
 });
 
@@ -413,28 +385,28 @@ count(2); // No log
 
 ---
 
-## 📡 `$fetch(data, url, [loading])` - Fetch
+## 📡 `$.fetch(data, url, [loading])` - Fetch
 Simple fetch wrapper with automatic JSON handling and optional loading signal. Perfect for API calls.
 
 ### Basic Fetch
 ```js
-import { $, $fetch } from 'sigpro';
+import { $, $.fetch } from 'sigpro';
 
 const userData = $(null);
 
 // Simple POST request
-const result = await $fetch('/api/users', { name: 'John' });
+const result = await $.fetch('/api/users', { name: 'John' });
 ```
 
 ### Fetch with Loading State
 ```js
-import { $, $fetch } from 'sigpro';
+import { $, $.fetch } from 'sigpro';
 
 const loading = $(false);
 const userData = $(null);
 
 async function loadUser(id) {
-  const data = await $fetch(`/api/users/${id}`, null, loading);
+  const data = await $.fetch(`/api/users/${id}`, null, loading);
   if (data) userData(data);
 }
 
@@ -451,7 +423,7 @@ html`
 
 ### Error Handling
 ```js
-const data = await $fetch('/api/users', { id: 123 });
+const data = await $.fetch('/api/users', { id: 123 });
 if (!data) {
   // Handle error silently (returns null on failure)
   console.error('Request failed');
@@ -467,14 +439,14 @@ if (!data) {
 
 ---
 
-## 🔌 `$ws(url, [options])` - WebSocket
+## 🔌 `$.ws(url, [options])` - WebSocket
 Reactive WebSocket wrapper with automatic reconnection and signal-based state management.
 
 ### Basic WebSocket
 ```js
-import { $ws } from 'sigpro';
+import { $.ws } from 'sigpro';
 
-const socket = $ws('wss://echo.websocket.org');
+const socket = $.ws('wss://echo.websocket.org');
 
 // Reactive status (disconnected/connecting/connected/error)
 socket.status() // 'connected'
@@ -489,7 +461,7 @@ socket.send({ type: 'ping', data: 'test' });
 
 ### Auto-Reconnect Configuration
 ```js
-const socket = $ws('wss://api.example.com', {
+const socket = $.ws('wss://api.example.com', {
   reconnect: true,              // Enable auto-reconnect
   maxReconnect: 5,               // Max attempts (default: 5)
   reconnectInterval: 1000        // Base interval in ms (uses exponential backoff)
@@ -498,9 +470,9 @@ const socket = $ws('wss://api.example.com', {
 
 ### Reactive UI Integration
 ```js
-import { $ws, html } from 'sigpro';
+import { $.ws, html } from 'sigpro';
 
-const chat = $ws('wss://chat.example.com');
+const chat = $.ws('wss://chat.example.com');
 
 const view = html`
   <div>
@@ -528,7 +500,7 @@ const view = html`
 
 ### Manual Control
 ```js
-const socket = $ws('wss://api.example.com');
+const socket = $.ws('wss://api.example.com');
 
 // Send data
 socket.send({ action: 'subscribe', channel: 'updates' });
@@ -719,7 +691,7 @@ html`<div class=${className}></div>`
 html`<a href="${href}" class="link ${className}">Link</a>`
 
 // Reactive attributes update when signal changes
-$effectffect(() => {
+$.effectffect(() => {
   // The attribute updates automatically
   console.log('Class changed:', className());
 });
@@ -863,16 +835,16 @@ const Page = () => html`
 
 ---
 
-### `$component(tagName, setupFunction, observedAttributes)` - Web Components
+### `$.component(tagName, setupFunction, observedAttributes)` - Web Components
 
 Creates Custom Elements with reactive properties. Uses Light DOM (no Shadow DOM) and a slot system based on node filtering.
 
 #### Basic Component
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $.component, html } from 'sigpro';
 
-$component('my-counter', (props, context) => {
+$.component('my-counter', (props, context) => {
   // props contains signals for each observed attribute
   // context: { slot, emit, host, onUnmount }
   
@@ -909,9 +881,9 @@ Usage:
 #### Component with Named Slots
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $.component, html } from 'sigpro';
 
-$component('my-card', (props, { slot }) => {
+$.component('my-card', (props, { slot }) => {
   return html`
     <div class="card">
       <div class="header">
@@ -947,9 +919,9 @@ Usage:
 #### Component with Props and Events
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $.component, html } from 'sigpro';
 
-$component('todo-item', (props, { emit, host }) => {
+$.component('todo-item', (props, { emit, host }) => {
   const handleToggle = () => {
     props.completed(c => !c);
     emit('toggle', { id: props.id(), completed: props.completed() });
@@ -989,13 +961,13 @@ Usage:
 #### Component with Cleanup
 
 ```javascript
-import { $, $component, html, $effect } from 'sigpro';
+import { $, $.component, html, $.effect } from 'sigpro';
 
-$component('timer-widget', (props, { onUnmount }) => {
+$.component('timer-widget', (props, { onUnmount }) => {
   const seconds = $(0);
   
   // Effect with automatic cleanup
-  $effect(() => {
+  $.effect(() => {
     const interval = setInterval(() => {
       seconds(s => s + 1);
     }, 1000);
@@ -1021,9 +993,9 @@ $component('timer-widget', (props, { onUnmount }) => {
 #### Complete Context API
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $.component, html } from 'sigpro';
 
-$component('context-demo', (props, context) => {
+$.component('context-demo', (props, context) => {
   // Context properties:
   // - slot(name) - Gets child nodes with matching slot attribute
   // - emit(name, detail) - Dispatches custom event
@@ -1065,9 +1037,9 @@ $component('context-demo', (props, context) => {
 #### Practical Example: Todo App Component
 
 ```javascript
-import { $, $component, html } from 'sigpro';
+import { $, $.component, html } from 'sigpro';
 
-$component('todo-app', () => {
+$.component('todo-app', () => {
   const todos = $([]);
   const newTodo = $('');
   const filter = $('all');
@@ -1154,7 +1126,7 @@ $component('todo-app', () => {
 }, []);
 ```
 
-#### Key Points About `$component`:
+#### Key Points About `$.component`:
 
 1. **Light DOM only** - No Shadow DOM, children are accessible and styleable from outside
 2. **Slot system** - `slot()` function filters child nodes by `slot` attribute
@@ -1165,16 +1137,16 @@ $component('todo-app', () => {
 
 ---
 
-### `$router(routes)` - Router
+### `$.router(routes)` - Router
 
 Hash-based router for SPAs with reactive integration.
 
 #### Basic Routing
 
 ```typescript
-import { $router, html } from 'sigpro';
+import { $.router, html } from 'sigpro';
 
-const router = $router([
+const router = $.router([
   {
     path: '/',
     component: () => html`
@@ -1197,9 +1169,9 @@ document.body.appendChild(router);
 #### Route Parameters
 
 ```typescript
-import { $router, html } from 'sigpro';
+import { $.router, html } from 'sigpro';
 
-const router = $router([
+const router = $.router([
   {
     path: '/user/:id',
     component: (params) => html`
@@ -1226,9 +1198,9 @@ const router = $router([
 #### Nested Routes
 
 ```typescript
-import { $router, html, $ } from 'sigpro';
+import { $.router, html, $ } from 'sigpro';
 
-const router = $router([
+const router = $.router([
   {
     path: '/',
     component: () => html`
@@ -1242,7 +1214,7 @@ const router = $router([
     path: '/dashboard',
     component: () => {
       // Nested router
-      const subRouter = $router([
+      const subRouter = $.router([
         {
           path: '/',
           component: () => html`<h2>Dashboard Home</h2>`
@@ -1275,19 +1247,19 @@ const router = $router([
 #### Route Guards
 
 ```typescript
-import { $router, html, $ } from 'sigpro';
+import { $.router, html, $ } from 'sigpro';
 
 const isAuthenticated = $(false);
 
 const requireAuth = (component) => (params) => {
   if (!isAuthenticated()) {
-    $router.go('/login');
+    $.router.go('/login');
     return null;
   }
   return component(params);
 };
 
-const router = $router([
+const router = $.router([
   {
     path: '/',
     component: () => html`<h1>Public Home</h1>`
@@ -1311,25 +1283,25 @@ const router = $router([
 #### Navigation
 
 ```typescript
-import { $router } from 'sigpro';
+import { $.router } from 'sigpro';
 
 // Navigate to path
-$router.go('/user/42');
+$.router.go('/user/42');
 
 // Navigate with replace
-$router.go('/dashboard', { replace: true });
+$.router.go('/dashboard', { replace: true });
 
 // Go back
-$router.back();
+$.router.back();
 
 // Go forward
-$router.forward();
+$.router.forward();
 
 // Get current path
-const currentPath = $router.getCurrentPath();
+const currentPath = $.router.getCurrentPath();
 
 // Listen to navigation
-$router.listen((path, oldPath) => {
+$.router.listen((path, oldPath) => {
   console.log(`Navigated from ${oldPath} to ${path}`);
 });
 ```
@@ -1337,9 +1309,9 @@ $router.listen((path, oldPath) => {
 #### Route Transitions
 
 ```typescript
-import { $router, html, $effect } from 'sigpro';
+import { $.router, html, $.effect } from 'sigpro';
 
-const router = $router([
+const router = $.router([
   {
     path: '/',
     component: () => html`<div class="page home">Home</div>`
@@ -1351,7 +1323,7 @@ const router = $router([
 ]);
 
 // Add transitions
-$effect(() => {
+$.effect(() => {
   const currentPath = router.getCurrentPath();
   const pages = document.querySelectorAll('.page');
   
