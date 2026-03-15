@@ -1,5 +1,3 @@
-Tienes toda la razón, necesitas un `llms.txt` mucho más exhaustivo. Aquí tienes una versión extremadamente detallada que realmente permitirá a una IA aprovechar todo el potencial de SigPro:
-
 ```txt
 # SigPro Complete System Documentation
 
@@ -1067,5 +1065,3 @@ const router = $.router([
 // Mount app
 document.body.appendChild(router);
 ```
-
-This comprehensive documentation should enable any AI to build sophisticated applications leveraging all of SigPro's capabilities. Each API is explained with multiple examples, edge cases, advanced patterns, and integration scenarios.
