@@ -60,8 +60,12 @@ const $ = (initialValue) => {
         computedEffect.dependencies.clear();
         const prev = activeEffect;
         activeEffect = computedEffect;
-        try { cachedValue = initialValue(); } 
-        finally { activeEffect = prev; isDirty = false; }
+        try {
+          cachedValue = initialValue();
+        } finally {
+          activeEffect = prev;
+          isDirty = false;
+        }
       },
     };
 
@@ -121,7 +125,9 @@ const $e = (effectFn) => {
       try {
         const res = effectFn();
         if (typeof res === "function") this.cleanupHandlers.add(res);
-      } finally { activeEffect = prev; }
+      } finally {
+        activeEffect = prev;
+      }
     },
     stop() {
       this.cleanupHandlers.forEach((h) => h());
@@ -131,7 +137,7 @@ const $e = (effectFn) => {
 
   if (currentPageCleanups) currentPageCleanups.push(() => effect.stop());
   if (activeEffect) activeEffect.cleanupHandlers.add(() => effect.stop());
-  
+
   effect.run();
   return () => effect.stop();
 };
@@ -442,8 +448,9 @@ const $p = (setupFunction) => {
  * @param {string} tagName - Custom element tag name
  * @param {Function} setupFunction - Component setup function
  * @param {string[]} observedAttributes - Array of observed attributes
+ * @param {boolean} useShadowDOM - Enable Shadow DOM (default: false)
  */
-const $c = (tagName, setupFunction, observedAttributes = []) => {
+const $c = (tagName, setupFunction, observedAttributes = [], useShadowDOM = false) => {
   if (customElements.get(tagName)) return;
 
   customElements.define(
@@ -457,12 +464,19 @@ const $c = (tagName, setupFunction, observedAttributes = []) => {
         super();
         this._propertySignals = {};
         this.cleanupFunctions = [];
+
+        if (useShadowDOM) {
+          this._root = this.attachShadow({ mode: "open" });
+        } else {
+          this._root = this;
+        }
+
         observedAttributes.forEach((attr) => (this._propertySignals[attr] = $(undefined)));
       }
 
       connectedCallback() {
         const frozenChildren = [...this.childNodes];
-        this.innerHTML = "";
+        this._root.innerHTML = "";
 
         observedAttributes.forEach((attr) => {
           const initialValue = this.hasOwnProperty(attr) ? this[attr] : this.getAttribute(attr);
@@ -480,7 +494,8 @@ const $c = (tagName, setupFunction, observedAttributes = []) => {
         });
 
         const context = {
-          select: (selector) => this.querySelector(selector),
+          select: (selector) => this._root.querySelector(selector),
+          selectAll: (selector) => this._root.querySelectorAll(selector),
           slot: (name) =>
             frozenChildren.filter((node) => {
               const slotName = node.nodeType === 1 ? node.getAttribute("slot") : null;
@@ -488,11 +503,12 @@ const $c = (tagName, setupFunction, observedAttributes = []) => {
             }),
           emit: (name, detail) => this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true })),
           host: this,
+          root: this._root,
           onUnmount: (cleanupFn) => this.cleanupFunctions.push(cleanupFn),
         };
 
         const result = setupFunction(this._propertySignals, context);
-        if (result instanceof Node) this.appendChild(result);
+        if (result instanceof Node) this._root.appendChild(result);
       }
 
       attributeChangedCallback(name, oldValue, newValue) {
@@ -548,17 +564,43 @@ const $r = (routes) => {
   const container = document.createElement("div");
   container.style.display = "contents";
 
+  const matchRoute = (path, routePath) => {
+    if (!routePath.includes(":")) {
+      return routePath === path ? {} : null;
+    }
+
+    const parts = routePath.split("/");
+    const pathParts = path.split("/");
+
+    if (parts.length !== pathParts.length) return null;
+
+    const params = {};
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].startsWith(":")) {
+        params[parts[i].slice(1)] = pathParts[i];
+      } else if (parts[i] !== pathParts[i]) {
+        return null;
+      }
+    }
+    return params;
+  };
+
   const render = () => {
     const path = getCurrentPath();
-    let matchedRoute = routes.find(r => r.path instanceof RegExp ? path.match(r.path) : r.path === path);
+    let matchedRoute = null;
     let routeParams = {};
-    
-    if (matchedRoute?.path instanceof RegExp) {
-      const m = path.match(matchedRoute.path);
-      routeParams = m.groups || { id: m[1] };
+
+    for (const route of routes) {
+      const params = matchRoute(path, route.path);
+      if (params !== null) {
+        matchedRoute = route;
+        routeParams = params;
+        break;
+      }
     }
 
     const view = matchedRoute ? matchedRoute.component(routeParams) : Object.assign(document.createElement("h1"), { textContent: "404" });
+
     container.replaceChildren(view instanceof Node ? view : document.createTextNode(String(view ?? "")));
   };
 
@@ -566,13 +608,13 @@ const $r = (routes) => {
   render();
   return container;
 };
+
 $r.go = (path) => {
   const targetPath = path.startsWith("/") ? path : `/${path}`;
   if (window.location.hash !== `#${targetPath}`) {
     window.location.hash = targetPath;
   }
 };
-
 
 /* Can customize the name of your functions */
 
