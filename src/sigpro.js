@@ -1,14 +1,7 @@
 // Global state for tracking the current reactive effect
 let activeEffect = null;
-
-// Queue for batched effect updates
 const effectQueue = new Set();
 let isFlushScheduled = false;
-
-/**
- * Flushes all pending effects in the queue
- * Executes all queued jobs and clears the queue
- */
 let flushCount = 0;
 
 const flushEffectQueue = () => {
@@ -39,43 +32,40 @@ const flushEffectQueue = () => {
  * @param {any} initialValue - Initial value or getter function
  * @returns {Function} Signal getter/setter function
  */
-export const $ = (initialValue) => {
+const $ = (initialValue) => {
   const subscribers = new Set();
+  let signal;
 
   if (typeof initialValue === "function") {
-    // Computed signal case
     let isDirty = true;
     let cachedValue;
 
     const computedEffect = {
       dependencies: new Set(),
-      cleanupHandlers: new Set(),
       markDirty: () => {
         if (!isDirty) {
           isDirty = true;
-          subscribers.forEach((subscriber) => {
-            if (subscriber.markDirty) subscriber.markDirty();
-            effectQueue.add(subscriber);
+          subscribers.forEach((sub) => {
+            if (sub.markDirty) sub.markDirty();
+            effectQueue.add(sub);
           });
+          if (!isFlushScheduled && effectQueue.size) {
+            isFlushScheduled = true;
+            queueMicrotask(flushEffectQueue);
+          }
         }
       },
       run: () => {
-        // Clear old dependencies
-        computedEffect.dependencies.forEach((dependencySet) => dependencySet.delete(computedEffect));
+        computedEffect.dependencies.forEach((dep) => dep.delete(computedEffect));
         computedEffect.dependencies.clear();
-
-        const previousEffect = activeEffect;
+        const prev = activeEffect;
         activeEffect = computedEffect;
-        try {
-          cachedValue = initialValue();
-        } finally {
-          activeEffect = previousEffect;
-          isDirty = false;
-        }
+        try { cachedValue = initialValue(); } 
+        finally { activeEffect = prev; isDirty = false; }
       },
     };
 
-    return () => {
+    signal = () => {
       if (activeEffect) {
         subscribers.add(activeEffect);
         activeEffect.dependencies.add(subscribers);
@@ -83,31 +73,33 @@ export const $ = (initialValue) => {
       if (isDirty) computedEffect.run();
       return cachedValue;
     };
-  }
-
-  // Regular signal case
-  return (...args) => {
-    if (args.length) {
-      const nextValue = typeof args[0] === "function" ? args[0](initialValue) : args[0];
-      if (!Object.is(initialValue, nextValue)) {
-        initialValue = nextValue;
-        subscribers.forEach((subscriber) => {
-          if (subscriber.markDirty) subscriber.markDirty();
-          effectQueue.add(subscriber);
-        });
-        if (!isFlushScheduled && effectQueue.size) {
-          isFlushScheduled = true;
-          queueMicrotask(flushEffectQueue);
+  } else {
+    signal = (...args) => {
+      if (args.length) {
+        const next = typeof args[0] === "function" ? args[0](initialValue) : args[0];
+        if (!Object.is(initialValue, next)) {
+          initialValue = next;
+          subscribers.forEach((sub) => {
+            if (sub.markDirty) sub.markDirty();
+            effectQueue.add(sub);
+          });
+          if (!isFlushScheduled && effectQueue.size) {
+            isFlushScheduled = true;
+            queueMicrotask(flushEffectQueue);
+          }
         }
       }
-    }
-    if (activeEffect) {
-      subscribers.add(activeEffect);
-      activeEffect.dependencies.add(subscribers);
-    }
-    return initialValue;
-  };
+      if (activeEffect) {
+        subscribers.add(activeEffect);
+        activeEffect.dependencies.add(subscribers);
+      }
+      return initialValue;
+    };
+  }
+  return signal;
 };
+
+let currentPageCleanups = null;
 
 /**
  * Creates a reactive effect that runs when dependencies change
@@ -119,31 +111,27 @@ const $e = (effectFn) => {
     dependencies: new Set(),
     cleanupHandlers: new Set(),
     run() {
-      // Run cleanup handlers
-      this.cleanupHandlers.forEach((handler) => handler());
+      this.cleanupHandlers.forEach((h) => h());
       this.cleanupHandlers.clear();
-
-      // Clear old dependencies
-      this.dependencies.forEach((dependencySet) => dependencySet.delete(this));
+      this.dependencies.forEach((dep) => dep.delete(this));
       this.dependencies.clear();
 
-      const previousEffect = activeEffect;
+      const prev = activeEffect;
       activeEffect = this;
       try {
-        const result = effectFn();
-        if (typeof result === "function") this.cleanupFunction = result;
-      } finally {
-        activeEffect = previousEffect;
-      }
+        const res = effectFn();
+        if (typeof res === "function") this.cleanupHandlers.add(res);
+      } finally { activeEffect = prev; }
     },
     stop() {
-      this.cleanupHandlers.forEach((handler) => handler());
-      this.dependencies.forEach((dependencySet) => dependencySet.delete(this));
-      this.cleanupFunction?.();
+      this.cleanupHandlers.forEach((h) => h());
+      this.dependencies.forEach((dep) => dep.delete(this));
     },
   };
 
+  if (currentPageCleanups) currentPageCleanups.push(() => effect.stop());
   if (activeEffect) activeEffect.cleanupHandlers.add(() => effect.stop());
+  
   effect.run();
   return () => effect.stop();
 };
@@ -195,22 +183,11 @@ const $s = (key, initialValue, storage = localStorage) => {
  * @returns {DocumentFragment} Reactive document fragment
  * @see {@link https://developer.mozilla.org/es/docs/Glossary/Cross-site_scripting}
  */
-export const html = (strings, ...values) => {
+const html = (strings, ...values) => {
   const templateCache = html._templateCache ?? (html._templateCache = new WeakMap());
 
-  /**
-   * Gets a node by path from root
-   * @param {Node} root - Root node
-   * @param {number[]} path - Path indices
-   * @returns {Node} Target node
-   */
   const getNodeByPath = (root, path) => path.reduce((node, index) => node?.childNodes?.[index], root);
 
-  /**
-   * Applies reactive text content to a node
-   * @param {Node} node - Target node
-   * @param {any[]} values - Values to insert
-   */
   const applyTextContent = (node, values) => {
     const parts = node.textContent.split("{{part}}");
     const parent = node.parentNode;
@@ -225,12 +202,19 @@ export const html = (strings, ...values) => {
         parent.insertBefore(startMarker, node);
         parent.insertBefore(endMarker, node);
 
-        let lastResult;
-        $e(() => {
-          let result = typeof currentValue === "function" ? currentValue() : currentValue;
-          if (result === lastResult) return;
-          lastResult = result;
+        if (typeof currentValue === "function") {
+          let lastResult;
+          $e(() => {
+            const result = currentValue();
+            if (result === lastResult) return;
+            lastResult = result;
+            updateContent(result);
+          });
+        } else {
+          updateContent(currentValue);
+        }
 
+        function updateContent(result) {
           if (typeof result !== "object" && !Array.isArray(result)) {
             const textNode = startMarker.nextSibling;
             const safeText = String(result ?? "");
@@ -241,40 +225,32 @@ export const html = (strings, ...values) => {
               while (startMarker.nextSibling !== endMarker) parent.removeChild(startMarker.nextSibling);
               parent.insertBefore(document.createTextNode(safeText), endMarker);
             }
-            return;
+          } else {
+            while (startMarker.nextSibling !== endMarker) parent.removeChild(startMarker.nextSibling);
+
+            const items = Array.isArray(result) ? result : [result];
+            const fragment = document.createDocumentFragment();
+            items.forEach((item) => {
+              if (item == null || item === false) return;
+              const nodeItem = item instanceof Node ? item : document.createTextNode(item);
+              fragment.appendChild(nodeItem);
+            });
+            parent.insertBefore(fragment, endMarker);
           }
-
-          // Handle arrays or objects
-          while (startMarker.nextSibling !== endMarker) parent.removeChild(startMarker.nextSibling);
-
-          const items = Array.isArray(result) ? result : [result];
-          const fragment = document.createDocumentFragment();
-          items.forEach((item) => {
-            if (item == null || item === false) return;
-            const nodeItem = item instanceof Node ? item : document.createTextNode(item);
-            fragment.appendChild(nodeItem);
-          });
-          parent.insertBefore(fragment, endMarker);
-        });
+        }
       }
     });
     node.remove();
   };
 
-  // Get or create template from cache
   let cachedTemplate = templateCache.get(strings);
   if (!cachedTemplate) {
     const template = document.createElement("template");
     template.innerHTML = strings.join("{{part}}");
 
     const dynamicNodes = [];
-    const treeWalker = document.createTreeWalker(template.content, 133); // NodeFilter.SHOW_ALL
+    const treeWalker = document.createTreeWalker(template.content, 133);
 
-    /**
-     * Gets path indices for a node
-     * @param {Node} node - Target node
-     * @returns {number[]} Path indices
-     */
     const getNodePath = (node) => {
       const path = [];
       while (node && node !== template.content) {
@@ -296,7 +272,6 @@ export const html = (strings, ...values) => {
       };
 
       if (currentNode.nodeType === 1) {
-        // Element node
         for (let i = 0; i < currentNode.attributes.length; i++) {
           const attribute = currentNode.attributes[i];
           if (attribute.value.includes("{{part}}")) {
@@ -305,7 +280,6 @@ export const html = (strings, ...values) => {
           }
         }
       } else if (currentNode.nodeType === 3 && currentNode.textContent.includes("{{part}}")) {
-        // Text node
         isDynamic = true;
       }
 
@@ -318,7 +292,6 @@ export const html = (strings, ...values) => {
   const fragment = cachedTemplate.template.content.cloneNode(true);
   let valueIndex = 0;
 
-  // Get target nodes before applyTextContent modifies the DOM
   const targets = cachedTemplate.dynamicNodes.map((nodeInfo) => ({
     node: getNodeByPath(fragment, nodeInfo.path),
     info: nodeInfo,
@@ -328,7 +301,6 @@ export const html = (strings, ...values) => {
     if (!node) return;
 
     if (info.type === 1) {
-      // Element node
       info.parts.forEach((part) => {
         const currentValue = values[valueIndex++];
         const attributeName = part.name;
@@ -342,7 +314,6 @@ export const html = (strings, ...values) => {
             if (modifiers.includes("stop")) e.stopPropagation();
             if (modifiers.includes("self") && e.target !== node) return;
 
-            // Debounce
             if (modifiers.some((m) => m.startsWith("debounce"))) {
               const ms = modifiers.find((m) => m.startsWith("debounce"))?.split(":")[1] || 300;
               clearTimeout(node._debounceTimer);
@@ -350,7 +321,6 @@ export const html = (strings, ...values) => {
               return;
             }
 
-            // Once (auto-remover)
             if (modifiers.includes("once")) {
               node.removeEventListener(eventName, handlerWrapper);
             }
@@ -362,44 +332,52 @@ export const html = (strings, ...values) => {
             passive: modifiers.includes("passive"),
             capture: modifiers.includes("capture"),
           });
-
-          // Cleanup
-          if ($e.onCleanup) {
-            $e.onCleanup(() => node.removeEventListener(eventName, handlerWrapper));
-          }
         } else if (firstChar === ":") {
-          // Two-way binding
           const propertyName = attributeName.slice(1);
           const eventType = node.type === "checkbox" || node.type === "radio" ? "change" : "input";
 
-          $e(() => {
-            const value = typeof currentValue === "function" ? currentValue() : currentValue;
-            if (node[propertyName] !== value) node[propertyName] = value;
-          });
+          if (typeof currentValue === "function") {
+            $e(() => {
+              const value = currentValue();
+              if (node[propertyName] !== value) node[propertyName] = value;
+            });
+          } else {
+            node[propertyName] = currentValue;
+          }
 
           node.addEventListener(eventType, () => {
             const value = eventType === "change" ? node.checked : node.value;
             if (typeof currentValue === "function") currentValue(value);
           });
         } else if (firstChar === "?") {
-          // Boolean attribute
           const attrName = attributeName.slice(1);
-          $e(() => {
-            const result = typeof currentValue === "function" ? currentValue() : currentValue;
-            node.toggleAttribute(attrName, !!result);
-          });
+
+          if (typeof currentValue === "function") {
+            $e(() => {
+              const result = currentValue();
+              node.toggleAttribute(attrName, !!result);
+            });
+          } else {
+            node.toggleAttribute(attrName, !!currentValue);
+          }
         } else if (firstChar === ".") {
-          // Property binding
           const propertyName = attributeName.slice(1);
-          $e(() => {
-            let result = typeof currentValue === "function" ? currentValue() : currentValue;
-            node[propertyName] = result;
-            if (result != null && typeof result !== "object" && typeof result !== "boolean") {
-              node.setAttribute(propertyName, result);
+
+          if (typeof currentValue === "function") {
+            $e(() => {
+              const result = currentValue();
+              node[propertyName] = result;
+              if (result != null && typeof result !== "object" && typeof result !== "boolean") {
+                node.setAttribute(propertyName, result);
+              }
+            });
+          } else {
+            node[propertyName] = currentValue;
+            if (currentValue != null && typeof currentValue !== "object" && typeof currentValue !== "boolean") {
+              node.setAttribute(propertyName, currentValue);
             }
-          });
+          }
         } else {
-          // Regular attribute
           if (typeof currentValue === "function") {
             $e(() => node.setAttribute(attributeName, currentValue()));
           } else {
@@ -408,7 +386,6 @@ export const html = (strings, ...values) => {
         }
       });
     } else if (info.type === 3) {
-      // Text node
       const placeholderCount = node.textContent.split("{{part}}").length - 1;
       applyTextContent(node, values.slice(valueIndex, valueIndex + placeholderCount));
       valueIndex += placeholderCount;
@@ -416,6 +393,48 @@ export const html = (strings, ...values) => {
   });
 
   return fragment;
+};
+
+/**
+ * Creates a page with automatic cleanup
+ * @param {Function} setupFunction - Page setup function that receives props
+ * @returns {Function} A function that creates page instances with props
+ */
+const $p = (setupFunction) => {
+  const tagName = "page-" + Math.random().toString(36).substring(2, 9);
+
+  customElements.define(
+    tagName,
+    class extends HTMLElement {
+      connectedCallback() {
+        this.style.display = "contents";
+        this._cleanups = [];
+        currentPageCleanups = this._cleanups;
+
+        try {
+          const result = setupFunction({
+            params: JSON.parse(this.getAttribute("params") || "{}"),
+            onUnmount: (fn) => this._cleanups.push(fn),
+          });
+          this.appendChild(result instanceof Node ? result : document.createTextNode(String(result)));
+        } finally {
+          currentPageCleanups = null;
+        }
+      }
+
+      disconnectedCallback() {
+        this._cleanups.forEach((fn) => fn());
+        this._cleanups = [];
+        this.innerHTML = "";
+      }
+    },
+  );
+
+  return (props = {}) => {
+    const el = document.createElement(tagName);
+    el.setAttribute("params", JSON.stringify(props));
+    return el;
+  };
 };
 
 /**
@@ -519,153 +538,52 @@ const $f = async (url, data, loading) => {
   }
 };
 
-const sanitizePath = (path) => {
-  // Eliminar cualquier intento de HTML/JavaScript
-  return String(path).replace(/[<>"']/g, "");
-};
-
 /**
  * Creates a router for hash-based navigation
  * @param {Array<{path: string|RegExp, component: Function}>} routes - Route configurations
  * @returns {HTMLDivElement} Router container element
  */
 const $r = (routes) => {
-  /**
-   * Gets current path from hash
-   * @returns {string} Current path
-   */
   const getCurrentPath = () => window.location.hash.replace(/^#/, "") || "/";
-
-  const currentPath = $(getCurrentPath());
   const container = document.createElement("div");
   container.style.display = "contents";
 
-  window.addEventListener("hashchange", () => {
-    const nextPath = sanitizePath(getCurrentPath());
-    if (currentPath() !== nextPath) currentPath(nextPath);
-  });
-
-  $e(() => {
-    const path = currentPath();
-    let matchedRoute = null;
+  const render = () => {
+    const path = getCurrentPath();
+    let matchedRoute = routes.find(r => r.path instanceof RegExp ? path.match(r.path) : r.path === path);
     let routeParams = {};
-
-    for (const route of routes) {
-      if (route.path instanceof RegExp) {
-        const match = path.match(route.path);
-        if (match) {
-          matchedRoute = route;
-          routeParams = match.groups || { id: match[1] };
-          break;
-        }
-      } else if (route.path === path) {
-        matchedRoute = route;
-        break;
-      }
+    
+    if (matchedRoute?.path instanceof RegExp) {
+      const m = path.match(matchedRoute.path);
+      routeParams = m.groups || { id: m[1] };
     }
 
-    const previousEffect = activeEffect;
-    activeEffect = null;
+    const view = matchedRoute ? matchedRoute.component(routeParams) : Object.assign(document.createElement("h1"), { textContent: "404" });
+    container.replaceChildren(view instanceof Node ? view : document.createTextNode(String(view ?? "")));
+  };
 
-    try {
-      const view = matchedRoute ? matchedRoute.component(routeParams) : Object.assign(document.createElement("h1"), { textContent: "404" });
-
-      container.replaceChildren(view instanceof Node ? view : document.createTextNode(view ?? ""));
-    } finally {
-      activeEffect = previousEffect;
-    }
-  });
-
+  window.addEventListener("hashchange", render);
+  render();
   return container;
 };
-
-/**
- * Navigates to a specific route
- * @param {string} path - Target path
- */
 $r.go = (path) => {
   const targetPath = path.startsWith("/") ? path : `/${path}`;
-  if (window.location.hash !== `#${targetPath}`) window.location.hash = targetPath;
+  if (window.location.hash !== `#${targetPath}`) {
+    window.location.hash = targetPath;
+  }
 };
 
-/**
- * Simple WebSocket wrapper with signals
- * @param {string} url - WebSocket URL
- * @param {Object} options - Auto-reconnect options
- * @returns {Object} WebSocket with reactive signals
- */
-const $ws = (url, options = {}) => {
-  const { reconnect = true, maxReconnect = 5, reconnectInterval = 1000 } = options;
-
-  const status = $("disconnected");
-  const messages = $([]);
-  const error = $(null);
-
-  let ws = null;
-  let reconnectAttempts = 0;
-  let reconnectTimer = null;
-
-  const connect = () => {
-    status("connecting");
-    ws = new WebSocket(url);
-
-    ws.onopen = () => {
-      status("connected");
-      reconnectAttempts = 0;
-      error(null);
-    };
-
-    ws.onmessage = (e) => {
-      const data = e.data;
-      messages([...messages(), data]);
-    };
-
-    ws.onerror = (err) => {
-      error(err);
-      status("error");
-    };
-
-    ws.onclose = () => {
-      status("disconnected");
-
-      if (reconnect && reconnectAttempts < maxReconnect) {
-        reconnectTimer = setTimeout(
-          () => {
-            reconnectAttempts++;
-            connect();
-          },
-          reconnectInterval * Math.pow(2, reconnectAttempts),
-        );
-      }
-    };
-  };
-
-  const send = (data) => {
-    if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(typeof data === "string" ? data : JSON.stringify(data));
-    }
-  };
-
-  const close = () => {
-    if (reconnectTimer) clearTimeout(reconnectTimer);
-    if (ws) {
-      ws.close();
-      ws = null;
-    }
-  };
-
-  connect();
-
-  if ($e?.onCleanup) $e.onCleanup(close);
-
-  return { status, messages, error, send, close };
-};
 
 /* Can customize the name of your functions */
 
 $.effect = $e;
+$.page = $p;
 $.component = $c;
 $.fetch = $f;
 $.router = $r;
-$.ws = $ws;
 $.storage = $s;
+
+if (typeof window !== "undefined") {
+  window.$ = $;
+}
+export { $, html };
