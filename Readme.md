@@ -29,7 +29,6 @@ What emerged is a library that proves we've reached a turning point: the web is 
 | **Update Performance** (ms) | 🥇 **4ms** | 🥈 5ms | 🥈 5ms | 🥉 7ms | 18ms |
 | **Memory Usage** (MB) | 🥇 **8.2MB** | 🥈 10.1MB | 12.4MB | 🥉 11.8MB | 18.7MB |
 | **FPS Average** | 🥇 **58.3** | 🥈 58.0 | 🥉 57.3 | 56.0 | 50.0 |
-| **Battery Consumption** | 🥇 **2%** | 🥈 3% | 🥉 4% | 🥉 4% | 8% |
 | **Code Splitting** | 🥇 **Zero overhead** | 🥈 Minimal | 🥉 Moderate | 🥉 Moderate | High |
 | **Learning Curve** (hours) | 🥇 **2h** | 🥈 20h | 🥉 30h | 40h | 60h |
 | **Dependencies** | 🥇 0 | 🥇 0 | 🥇 0 | 🥈 2 | 🥉 5 |
@@ -45,9 +44,7 @@ What emerged is a library that proves we've reached a turning point: the web is 
 ✅ **Initial Render** – 57% faster than Solid, 73% faster than React  
 ✅ **Update Performance** – 25% faster than Solid/Svelte, 78% faster than React  
 ✅ **Memory Usage** – 34% less than Vue, 56% less than React  
-✅ **Battery Consumption** – 50% less than Svelte/Vue, 75% less than React  
 ✅ **Code Splitting** – Zero overhead, true dynamic imports  
-✅ **Learning Curve** – Master in hours, not weeks  
 ✅ **Zero Dependencies** – No npm baggage, no security debt  
 ✅ **No Compilation** – Write code, run code. That's it.  
 ✅ **Browser Native** – Built on Web Components, Custom Elements, vanilla JS  
@@ -385,7 +382,7 @@ count(2); // No log
 
 ---
 
-## 📡 `$.fetch(data, url, [loading])` - Fetch
+## 📡 `$.fetch(url , data, [loading])` - Fetch
 Simple fetch wrapper with automatic JSON handling and optional loading signal. Perfect for API calls.
 
 ### Basic Fetch
@@ -753,11 +750,11 @@ html`
   </ul>
 `
 
-// List with keys (for efficient updates)
+// List with conditional styling
 html`
   <ul>
-    ${() => todos().map((todo, index) => html`
-      <li key=${index}>
+    ${() => todos().map(todo => html`
+      <li>
         <input type="checkbox" ?checked=${todo.done} />
         <span style=${() => todo.done ? 'text-decoration: line-through' : ''}>
           ${todo.text}
@@ -1280,31 +1277,6 @@ const router = $.router([
 ]);
 ```
 
-#### Navigation
-
-```typescript
-import { $ } from 'sigpro';
-
-// Navigate to path
-$.router.go('/user/42');
-
-// Navigate with replace
-$.router.go('/dashboard', { replace: true });
-
-// Go back
-$.router.back();
-
-// Go forward
-$.router.forward();
-
-// Get current path
-const currentPath = $.router.getCurrentPath();
-
-// Listen to navigation
-$.router.listen((path, oldPath) => {
-  console.log(`Navigated from ${oldPath} to ${path}`);
-});
-```
 
 #### Route Transitions
 
