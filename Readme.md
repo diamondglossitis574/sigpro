@@ -250,42 +250,451 @@ export default $.page(({ params }) => {
 
 ---
 
-### `$.component(tagName, setupFunction, observedAttributes)` - Web Components
+## 📦 `$.component(tagName, setupFunction, observedAttributes, useShadowDOM)` - Web Components
 
-Creates Custom Elements with reactive properties.
+Creates Custom Elements with reactive properties. Choose between **Light DOM** (default) or **Shadow DOM** for style encapsulation.
 
-#### Basic Component
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `tagName` | `string` | (required) | Custom element tag name (must include a hyphen, e.g., `my-button`) |
+| `setupFunction` | `Function` | (required) | Function that renders the component |
+| `observedAttributes` | `string[]` | `[]` | Observed attributes that react to changes |
+| `useShadowDOM` | `boolean` | `false` | `true` = Shadow DOM (encapsulated), `false` = Light DOM (inherits styles) |
+
+---
+
+### 🏠 **Light DOM** (`useShadowDOM = false`) - Default
+
+The component **inherits global styles** from the application. Ideal for components that should visually integrate with the rest of the interface.
+
+#### Example: Button with Tailwind CSS
 
 ```javascript
+// button-tailwind.js
 import { $, html } from 'sigpro';
 
-$.component('my-counter', (props, { slot, emit, onUnmount }) => {
-  const increment = () => {
-    props.value(v => (parseInt(v) || 0) + 1);
-    emit('change', props.value());
+$.component('tw-button', (props, { slot, emit }) => {
+  const variant = props.variant() || 'primary';
+  
+  const variants = {
+    primary: 'bg-blue-500 hover:bg-blue-600 text-white',
+    secondary: 'bg-gray-500 hover:bg-gray-600 text-white',
+    outline: 'border border-blue-500 text-blue-500 hover:bg-blue-50'
   };
   
   return html`
-    <div>
-      <p>Value: ${props.value}</p>
-      <button @click=${increment}>+</button>
+    <button 
+      class="px-4 py-2 rounded font-semibold transition-colors ${variants[variant]}"
+      @click=${() => emit('click')}
+    >
       ${slot()}
+    </button>
+  `;
+}, ['variant']); // Observe the 'variant' attribute
+```
+
+**Usage in HTML:**
+```html
+<!-- These buttons will inherit global Tailwind styles -->
+<tw-button variant="primary" @click=${handleClick}>
+  Save changes
+</tw-button>
+
+<tw-button variant="outline">
+  Cancel
+</tw-button>
+```
+
+#### Example: Form Input with Validation
+
+```javascript
+// form-input.js
+$.component('form-input', (props, { emit }) => {
+  const handleInput = (e) => {
+    const value = e.target.value;
+    props.value(value);
+    emit('update', value);
+    
+    // Simple validation
+    if (props.pattern()) {
+      const regex = new RegExp(props.pattern());
+      const isValid = regex.test(value);
+      emit('validate', isValid);
+    }
+  };
+  
+  return html`
+    <div class="form-group">
+      <label class="form-label">${props.label()}</label>
+      <input
+        type="${props.type() || 'text'}"
+        class="form-control ${props.error() ? 'is-invalid' : ''}"
+        :value=${props.value}
+        @input=${handleInput}
+        placeholder="${props.placeholder() || ''}"
+        ?disabled=${props.disabled}
+      />
+      ${props.error() ? html`
+        <div class="invalid-feedback">${props.error()}</div>
+      ` : ''}
     </div>
   `;
-}, ['value']); // Observed attributes
+}, ['label', 'type', 'value', 'error', 'placeholder', 'disabled', 'pattern']);
 ```
 
-Usage:
+**Usage:**
 ```html
-<my-counter value="5" @change=${(e) => console.log(e.detail)}>
-  <span>Child content</span>
-</my-counter>
+<form-input
+  label="Email"
+  type="email"
+  :value=${email}
+  pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+  @update=${(e) => email(e.detail)}
+  @validate=${(e) => setEmailValid(e.detail)}
+>
+</form-input>
 ```
 
-**Parameters:**
-- `tagName`: Custom element tag name (must contain a hyphen)
-- `setupFunction`: Component setup function
-- `observedAttributes`: Array of attribute names to observe
+#### Example: Card that uses global design system
+
+```javascript
+// content-card.js
+$.component('content-card', (props, { slot }) => {
+  return html`
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <h3 class="card-title h5 mb-0">${props.title()}</h3>
+      </div>
+      <div class="card-body">
+        ${slot()}
+      </div>
+      ${props.footer() ? html`
+        <div class="card-footer bg-white">
+          ${props.footer()}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}, ['title', 'footer']);
+```
+
+**Usage:**
+```html
+<content-card title="Recent Activity">
+  <p>Your dashboard updates will appear here.</p>
+</content-card>
+```
+
+---
+
+### 🛡️ **Shadow DOM** (`useShadowDOM = true`) - Encapsulated
+
+The component **encapsulates its styles** completely. External styles don't affect it, and its styles don't leak out. Perfect for:
+- UI libraries distributed across projects
+- Third-party widgets
+- Components with very specific styling needs
+
+#### Example: Calendar Component (Distributable UI)
+
+```javascript
+// ui-calendar.js
+$.component('ui-calendar', (props, { select }) => {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const currentDate = props.date() ? new Date(props.date()) : new Date();
+  
+  return html`
+    <style>
+      /* These styles are ENCAPSULATED - won't affect the page */
+      .calendar {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        width: 320px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .month {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2c3e50;
+      }
+      .nav-btn {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 4px 12px;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      .nav-btn:hover {
+        background: #f0f0f0;
+      }
+      .weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        text-align: center;
+        font-weight: 500;
+        color: #7f8c8d;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+      }
+      .days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+      }
+      .day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 50%;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+      }
+      .day:hover {
+        background: #e3f2fd;
+      }
+      .day.selected {
+        background: #2196f3;
+        color: white;
+        font-weight: 500;
+      }
+      .day.today {
+        border: 2px solid #2196f3;
+        font-weight: 600;
+      }
+      .day.other-month {
+        color: #bdc3c7;
+      }
+    </style>
+    
+    <div class="calendar">
+      <div class="header">
+        <button class="nav-btn" @click=${() => handlePrevMonth()}>&#8592;</button>
+        <span class="month">${currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+        <button class="nav-btn" @click=${() => handleNextMonth()}>&#8594;</button>
+      </div>
+      
+      <div class="weekdays">
+        ${days.map(day => html`<span>${day}</span>`)}
+      </div>
+      
+      <div class="days">
+        ${generateDays(currentDate).map(day => html`
+          <div 
+            class="day ${day.classes}"
+            @click=${() => selectDate(day.date)}
+          >
+            ${day.number}
+          </div>
+        `)}
+      </div>
+    </div>
+  `;
+}, ['date'], true); // true = use Shadow DOM
+```
+
+**Usage - anywhere, anytime, looks identical:**
+```html
+<!-- Same calendar, same styles, in ANY website -->
+<ui-calendar date="2024-03-15"></ui-calendar>
+```
+
+#### Example: Third-party Chat Widget
+
+```javascript
+// chat-widget.js
+$.component('chat-widget', (props, { select }) => {
+  return html`
+    <style>
+      /* Completely isolated - won't affect host page */
+      :host {
+        all: initial; /* Reset all styles */
+        display: block;
+      }
+      .chat-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 320px;
+        height: 480px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        z-index: 2147483647; /* Max z-index */
+      }
+      .header {
+        padding: 16px;
+        background: #075e54;
+        color: white;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .avatar {
+        width: 40px;
+        height: 40px;
+        background: #128c7e;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+      .title {
+        font-weight: 600;
+      }
+      .subtitle {
+        font-size: 0.8rem;
+        opacity: 0.8;
+      }
+      .messages {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        background: #e5ddd5;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .message {
+        max-width: 80%;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        word-wrap: break-word;
+      }
+      .message.received {
+        background: white;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+      .message.sent {
+        background: #dcf8c6;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+      }
+      .footer {
+        padding: 12px;
+        background: #f0f0f0;
+        border-radius: 0 0 16px 16px;
+        display: flex;
+        gap: 8px;
+      }
+      .input {
+        flex: 1;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 20px;
+        outline: none;
+        font-size: 0.9rem;
+      }
+      .send-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: #075e54;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      .send-btn:hover {
+        background: #128c7e;
+      }
+      .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+    
+    <div class="chat-container">
+      <div class="header">
+        <div class="avatar">💬</div>
+        <div>
+          <div class="title">Support Chat</div>
+          <div class="subtitle">Online</div>
+        </div>
+      </div>
+      
+      <div class="messages" id="messageContainer">
+        ${props.messages().map(msg => html`
+          <div class="message ${msg.type}">${msg.text}</div>
+        `)}
+      </div>
+      
+      <div class="footer">
+        <input 
+          type="text" 
+          class="input" 
+          placeholder="Type a message..."
+          :value=${props.currentMessage}
+          @keydown.enter=${() => sendMessage()}
+        />
+        <button 
+          class="send-btn"
+          ?disabled=${!props.currentMessage()}
+          @click=${() => sendMessage()}
+        >
+          ➤
+        </button>
+      </div>
+    </div>
+  `;
+}, ['messages', 'currentMessage'], true);
+```
+
+**Usage - embed in ANY website:**
+```html
+<chat-widget .messages=${chatHistory} .currentMessage=${newMessage}></chat-widget>
+```
+
+---
+
+### 🎯 **Quick Decision Guide**
+
+| Use Light DOM (`false`) when... | Use Shadow DOM (`true`) when... |
+|--------------------------------|-------------------------------|
+| ✅ Component is part of your main app | ✅ Building a UI library for others |
+| ✅ Using global CSS (Tailwind, Bootstrap) | ✅ Creating embeddable widgets |
+| ✅ Need to inherit theme variables | ✅ Styles must be pixel-perfect everywhere |
+| ✅ Working with existing design system | ✅ Component has complex, specific styles |
+| ✅ Quick prototyping | ✅ Distributing to different projects |
+| ✅ Form elements that should match site | ✅ Need style isolation/encapsulation |
+
+### 💡 **Pro Tips**
+
+1. **Light DOM components** are great for app-specific UI that should feel "native" to your site
+2. **Shadow DOM components** are perfect for reusable "products" that must look identical everywhere
+3. You can mix both in the same app - choose per component based on needs
+4. Shadow DOM also provides DOM isolation - great for complex widgets
+
+```javascript
+// Mix and match in the same app!
+$.component('app-header', setup, ['title']);                    // Light DOM
+$.component('user-menu', setup, ['items']);                     // Light DOM  
+$.component('chat-widget', setup, ['messages'], true);          // Shadow DOM
+$.component('data-grid', setup, ['columns', 'data'], true);     // Shadow DOM
+```
 
 ---
 
