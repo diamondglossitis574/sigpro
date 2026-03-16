@@ -67,7 +67,7 @@ SigPro (Signal Professional) embraces the web platform. Built on top of Custom E
 For the best development experience with SigPro, install these VS Code extensions:
 
 - **Prettier** – Automatically formats your template literals for better readability
-- **lit-html** – Adds syntax highlighting, autocompletion, and inline HTML color previews inside `html` tagged templates
+- **lit-html** – Adds syntax highlighting and inline HTML color previews inside `html` tagged templates
 
 This combination gives you framework-level developer experience without the framework complexity—syntax highlighting, color previews, and automatic formatting for your reactive templates, all while writing pure JavaScript.
 
