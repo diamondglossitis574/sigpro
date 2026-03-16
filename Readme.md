@@ -107,6 +107,7 @@ html`
 | **`$.router`** | Hash-based router with params | `$.router([{path:'/', component:Home}])` |
 | **`$.ws`** | WebSocket with reactive state | `const {status, messages} = $.ws(url)` |
 | **`$.storage`** | Persistent signal (localStorage) | `const theme = $.storage('theme', 'light')` |
+| **`$.debug`** | System inspector (console table) | `$.debug()` |
 | **`html`** | Template literal for reactive HTML | `` html`<div>${count}</div>` `` |
 
 ```javascript
@@ -1276,7 +1277,81 @@ const router = $.router([
   }
 ]);
 ```
+## 🔍 `$.debug()` - System Inspector
 
+Inspects the entire reactive system and displays a clean table of all signals and effects in the console.
+
+```javascript
+import { $ } from 'sigpro';
+
+// Create some signals and effects
+const count = $(0);
+const name = $('World');
+const fullName = $(() => `${name()} SigPro`);
+
+$.effect(() => {
+  console.log('Count changed:', count());
+});
+
+$.effect(() => {
+  console.log('Name changed:', name());
+});
+
+// Inspect the system
+$.debug();
+```
+
+### Console Output
+
+```
+🔍 SigPro
+📊 SIGNALS (3)
+┌─────────┬──────┬─────────┬──────┐
+│ (index) │ ID   │ Value   │ Subs │
+├─────────┼──────┼─────────┼──────┤
+│ 0       │ "a1b2"│ 5       │ 1    │
+│ 1       │ "c3d4"│ "World" │ 2    │
+│ 2       │ "e5f6"│ "World…"│ 0    │
+└─────────┴──────┴─────────┴──────┘
+
+⚡ EFFECTS (2)
+┌─────────┬──────┬──────┬────────┐
+│ (index) │ ID   │ Deps │ Cleanup│
+├─────────┼──────┼──────┼────────┤
+│ 0       │ "x7y8"│ 1    │ ✗      │
+│ 1       │ "z9w0"│ 1    │ ✗      │
+└─────────┴──────┴──────┴────────┘
+
+🔄 Queue: 0
+```
+
+### What it shows
+
+| Column | Description |
+|--------|-------------|
+| **ID** | Unique identifier for each signal/effect |
+| **Value** | Current value of the signal |
+| **Subs** | Number of subscribers (effects watching this signal) |
+| **Deps** | Number of dependencies this effect watches |
+| **Cleanup** | Whether the effect has a cleanup function |
+| **Queue** | Pending effects waiting to run |
+
+### Debug at any time
+
+```javascript
+// After user interaction
+button.addEventListener('click', () => {
+  count(count() + 1);
+  $.debug(); // See how subscribers and dependencies changed
+});
+
+// When things get weird
+setTimeout(() => {
+  $.debug(); // Check for memory leaks (signals/effects that should be gone)
+}, 5000);
+```
+
+**Perfect for:** detecting memory leaks, understanding reactivity, and debugging complex signal interactions.
 
 
 
