@@ -1278,39 +1278,6 @@ const router = $.router([
 ```
 
 
-#### Route Transitions
-
-```typescript
-import { $, html } from 'sigpro';
-
-const router = $.router([
-  {
-    path: '/',
-    component: () => html`<div class="page home">Home</div>`
-  },
-  {
-    path: '/about',
-    component: () => html`<div class="page about">About</div>`
-  }
-]);
-
-// Add transitions
-$.effect(() => {
-  const currentPath = router.getCurrentPath();
-  const pages = document.querySelectorAll('.page');
-  
-  pages.forEach(page => {
-    page.style.opacity = '0';
-    page.style.transition = 'opacity 0.3s';
-    
-    setTimeout(() => {
-      page.style.opacity = '1';
-    }, 50);
-  });
-});
-```
-
-
 
 
 
