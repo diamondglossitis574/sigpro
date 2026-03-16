@@ -752,33 +752,495 @@ const tempData = $.storage('temp', {}, sessionStorage);
 
 ---
 
-### `$.router(routes)` - Router
+## 🧭 `$.router(routes)` - Hash-Based Router
 
-Hash-based router for SPAs with automatic page cleanup.
+Creates a simple, powerful hash-based router for Single Page Applications (SPAs) with **automatic page cleanup** and **zero configuration**. Built on native browser APIs - no dependencies, no complex setup.
+
+### Why Hash-Based?
+
+Hash routing (`#/about`) works **everywhere** - no server configuration needed. It's perfect for:
+- Static sites and SPAs
+- GitHub Pages, Netlify, any static hosting
+- Local development without a server
+- Projects that need to work immediately
+
+### Basic Usage
 
 ```javascript
 import { $, html } from 'sigpro';
-import HomePage from './pages/index.js';
-import AboutPage from './pages/about.js';
-import UserPage from './pages/user.js';
+import HomePage from './pages/HomePage.js';
+import AboutPage from './pages/AboutPage.js';
+import UserPage from './pages/UserPage.js';
+import NotFound from './pages/NotFound.js';
 
+// Define your routes
 const routes = [
-  { path: '/', component: (params) => HomePage(params) },
-  { path: '/about', component: (params) => AboutPage(params) },
-  { path: /^\/user\/(?<id>\d+)$/, component: (params) => UserPage(params) },
+  { path: '/', component: () => HomePage() },
+  { path: '/about', component: () => AboutPage() },
+  { path: '/users/:id', component: (params) => UserPage(params) },
+  { path: /^\/posts\/(?<id>\d+)$/, component: (params) => PostPage(params) },
 ];
 
+// Create and mount the router
 const router = $.router(routes);
 document.body.appendChild(router);
-
-// Navigate programmatically
-$.router.go('/about');
 ```
 
-**Parameters:**
-- `routes`: Array of route objects with `path` (string or RegExp) and `component` function
+---
 
-**Returns:** Container element with the current page
+### 📋 Route Definition
+
+Each route is an object with two properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | `string` or `RegExp` | Route pattern to match |
+| `component` | `Function` | Function that returns page content (receives `params`) |
+
+#### String Paths (Simple Routes)
+
+```javascript
+{ path: '/', component: () => HomePage() }
+{ path: '/about', component: () => AboutPage() }
+{ path: '/contact', component: () => ContactPage() }
+{ path: '/users/:id', component: (params) => UserPage(params) } // With parameter
+```
+
+String paths support:
+- **Static segments**: `/about`, `/contact`, `/products`
+- **Named parameters**: `:id`, `:slug`, `:username` (captured in `params`)
+
+#### RegExp Paths (Advanced Routing)
+
+```javascript
+// Match numeric IDs only
+{ path: /^\/users\/(?<id>\d+)$/, component: (params) => UserPage(params) }
+
+// Match product slugs (letters, numbers, hyphens)
+{ path: /^\/products\/(?<slug>[a-z0-9-]+)$/, component: (params) => ProductPage(params) }
+
+// Match blog posts by year/month
+{ path: /^\/blog\/(?<year>\d{4})\/(?<month>\d{2})$/, component: (params) => BlogArchive(params) }
+
+// Match optional language prefix
+{ path: /^\/(?<lang>en|es|fr)?\/?about$/, component: (params) => AboutPage(params) }
+```
+
+RegExp gives you **full control** over route matching with named capture groups.
+
+---
+
+### 🎯 Route Parameters
+
+Parameters are automatically extracted and passed to your component:
+
+```javascript
+// Route: '/users/:id'
+// URL: '#/users/42'
+{ path: '/users/:id', component: (params) => {
+  console.log(params.id); // "42"
+  return UserPage(params);
+}}
+
+// Route: /^\/posts\/(?<id>\d+)$/
+// URL: '#/posts/123'
+{ path: /^\/posts\/(?<id>\d+)$/, component: (params) => {
+  console.log(params.id); // "123"
+  return PostPage(params);
+}}
+
+// Multiple parameters
+// Route: '/products/:category/:id'
+// URL: '#/products/electronics/42'
+{ path: '/products/:category/:id', component: (params) => {
+  console.log(params.category); // "electronics"
+  console.log(params.id); // "42"
+  return ProductPage(params);
+}}
+```
+
+---
+
+### 🔄 Automatic Page Cleanup
+
+The router **automatically cleans up** pages when navigating away:
+
+```javascript
+// pages/UserPage.js
+import { $, html } from 'sigpro';
+
+export default (params) => $.page(({ onUnmount }) => {
+  const userData = $(null);
+  const loading = $(true);
+  
+  // Set up polling
+  const interval = setInterval(() => {
+    fetchUserData(params.id);
+  }, 5000);
+  
+  // Register cleanup
+  onUnmount(() => {
+    clearInterval(interval); // ✅ Auto-cleaned on navigation
+    console.log('UserPage cleaned up');
+  });
+  
+  return html`
+    <div>
+      ${loading() ? 'Loading...' : html`<h1>${userData().name}</h1>`}
+    </div>
+  `;
+});
+```
+
+All `$.effect`, `setInterval`, event listeners, and subscriptions are automatically cleaned up.
+
+---
+
+### 🧭 Navigation
+
+#### Programmatic Navigation
+
+```javascript
+import { $ } from 'sigpro';
+
+// Go to specific route
+$.router.go('/about');
+$.router.go('/users/42');
+$.router.go('/products/electronics/123');
+
+// Automatically adds leading slash if missing
+$.router.go('about'); // Same as '/about'
+$.router.go('users/42'); // Same as '/users/42'
+
+// Works with hash
+$.router.go('#/about'); // Also works
+```
+
+#### Link Navigation
+
+```javascript
+// In your HTML templates
+const navigation = html`
+  <nav>
+    <a href="#/">Home</a>
+    <a href="#/about">About</a>
+    <a href="#/users/42">User 42</a>
+    
+    <!-- Or use @click for programmatic -->
+    <button @click=${() => $.router.go('/contact')}>
+      Contact
+    </button>
+  </nav>
+`;
+```
+
+#### Current Route Info
+
+```javascript
+// Get current path (without hash)
+const currentPath = window.location.hash.replace(/^#/, '') || '/';
+
+// Listen to route changes
+window.addEventListener('hashchange', () => {
+  console.log('Route changed to:', window.location.hash);
+});
+```
+
+---
+
+### 📑 Complete Examples
+
+#### Basic SPA with Layout
+
+```javascript
+// app.js
+import { $, html } from 'sigpro';
+import HomePage from './pages/Home.js';
+import AboutPage from './pages/About.js';
+import ContactPage from './pages/Contact.js';
+
+// Layout component with navigation
+const AppLayout = () => html`
+  <div class="app">
+    <header>
+      <nav>
+        <a href="#/">Home</a>
+        <a href="#/about">About</a>
+        <a href="#/contact">Contact</a>
+      </nav>
+    </header>
+    
+    <main>
+      <!-- Router will inject pages here -->
+      <div id="router-outlet"></div>
+    </main>
+    
+    <footer>
+      <p>© 2024 My App</p>
+    </footer>
+  </div>
+`;
+
+// Set up layout
+document.body.appendChild(AppLayout());
+
+// Create and mount router
+const router = $.router([
+  { path: '/', component: HomePage },
+  { path: '/about', component: AboutPage },
+  { path: '/contact', component: ContactPage },
+]);
+
+document.querySelector('#router-outlet').appendChild(router);
+```
+
+#### Blog with Dynamic Posts
+
+```javascript
+// pages/PostPage.js
+import { $, html } from 'sigpro';
+
+export default (params) => $.page(({ onUnmount }) => {
+  const post = $(null);
+  const loading = $(true);
+  const error = $(null);
+  
+  // Fetch post data
+  const loadPost = async () => {
+    loading(true);
+    error(null);
+    
+    try {
+      const response = await fetch(`/api/posts/${params.id}`);
+      const data = await response.json();
+      post(data);
+    } catch (e) {
+      error('Failed to load post');
+    } finally {
+      loading(false);
+    }
+  };
+  
+  loadPost();
+  
+  return html`
+    <article>
+      ${loading() ? html`<div class="spinner">Loading...</div>` : ''}
+      ${error() ? html`<div class="error">${error()}</div>` : ''}
+      ${post() ? html`
+        <h1>${post().title}</h1>
+        <div class="content">${post().content}</div>
+        <a href="#/blog">← Back to blog</a>
+      ` : ''}
+    </article>
+  `;
+});
+
+// routes
+const routes = [
+  { path: '/blog', component: BlogListPage },
+  { path: '/blog/:id', component: BlogPostPage }, // Dynamic route
+];
+```
+
+#### E-commerce with Categories
+
+```javascript
+// routes with multiple parameters
+const routes = [
+  // Products by category
+  { path: '/products/:category', component: (params) => 
+    ProductListPage({ category: params.category })
+  },
+  
+  // Specific product
+  { path: '/products/:category/:id', component: (params) => 
+    ProductDetailPage({ 
+      category: params.category,
+      id: params.id 
+    })
+  },
+  
+  // Search with query (using RegExp)
+  { 
+    path: /^\/search\/(?<query>[^/]+)(?:\/page\/(?<page>\d+))?$/, 
+    component: (params) => SearchPage({
+      query: decodeURIComponent(params.query),
+      page: params.page || 1
+    })
+  },
+];
+```
+
+---
+
+### ⚡ Advanced Features
+
+#### Nested Routes
+
+```javascript
+// Parent route
+const routes = [
+  {
+    path: '/dashboard',
+    component: (params) => DashboardLayout(params, (nestedParams) => {
+      // Nested routing inside dashboard
+      const nestedRoutes = [
+        { path: '/dashboard', component: DashboardHome },
+        { path: '/dashboard/users', component: DashboardUsers },
+        { path: '/dashboard/settings', component: DashboardSettings },
+      ];
+      return $.router(nestedRoutes);
+    })
+  },
+];
+```
+
+#### Route Guards
+
+```javascript
+const routes = [
+  { 
+    path: '/admin', 
+    component: (params) => {
+      // Simple auth guard
+      if (!isAuthenticated()) {
+        $.router.go('/login');
+        return html`<!-- empty -->`;
+      }
+      return AdminPage(params);
+    }
+  },
+];
+```
+
+#### 404 Handling
+
+```javascript
+const routes = [
+  { path: '/', component: HomePage },
+  { path: '/about', component: AboutPage },
+  // No match = automatic 404
+  // The router shows a default "404" if no route matches
+];
+
+// Or custom 404 page
+const routesWith404 = [
+  { path: '/', component: HomePage },
+  { path: '/about', component: AboutPage },
+  // Add catch-all at the end
+  { path: /.*/, component: () => Custom404Page() },
+];
+```
+
+---
+
+### 🎯 API Reference
+
+#### `$.router(routes)`
+
+Creates a router instance.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `routes` | `Array<Route>` | Array of route objects |
+
+**Returns:** `HTMLDivElement` - Container that renders the current page
+
+#### `$.router.go(path)`
+
+Navigates to a route programmatically.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `path` | `string` | Route path (automatically adds leading slash if missing) |
+
+**Example:**
+```javascript
+$.router.go('/users/42');
+$.router.go('about'); // Same as '/about'
+```
+
+#### Route Object
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | `string` or `RegExp` | Route pattern to match |
+| `component` | `Function` | Function that returns page content |
+
+The `component` receives `params` object with extracted parameters.
+
+---
+
+### 📊 Comparison
+
+| Feature | SigPro Router | React Router | Vue Router |
+|---------|--------------|--------------|------------|
+| Bundle Size | **~0.5KB** | ~20KB | ~15KB |
+| Dependencies | **0** | Many | Many |
+| Hash-based | ✅ | ✅ | ✅ |
+| History API | ❌ (by design) | ✅ | ✅ |
+| Route params | ✅ | ✅ | ✅ |
+| Nested routes | ✅ | ✅ | ✅ |
+| Lazy loading | ✅ (native) | ✅ | ✅ |
+| Auto cleanup | ✅ | ❌ | ❌ |
+| No config | ✅ | ❌ | ❌ |
+
+### 💡 Pro Tips
+
+1. **Always define the most specific routes first**
+   ```javascript
+   // ✅ Good
+   [
+     { path: '/users/:id/edit', component: EditUser },
+     { path: '/users/:id', component: ViewUser },
+     { path: '/users', component: UserList },
+   ]
+   
+   // ❌ Bad (catch-all before specific)
+   [
+     { path: '/users/:id', component: ViewUser }, // This matches '/users/edit' too!
+     { path: '/users/:id/edit', component: EditUser }, // Never reached
+   ]
+   ```
+
+2. **Use RegExp for validation**
+   ```javascript
+   // Only numeric IDs
+   { path: /^\/users\/(?<id>\d+)$/, component: UserPage }
+   
+   // Only lowercase slugs
+   { path: /^\/products\/(?<slug>[a-z-]+)$/, component: ProductPage }
+   ```
+
+3. **Lazy load pages for better performance**
+   ```javascript
+   const routes = [
+     { path: '/', component: () => import('./Home.js').then(m => m.default) },
+     { path: '/about', component: () => import('./About.js').then(m => m.default) },
+   ];
+   ```
+
+4. **Access route params anywhere**
+   ```javascript
+   // In any component, not just pages
+   const currentParams = () => {
+     const match = window.location.hash.match(/^#\/users\/(?<id>\d+)$/);
+     return match?.groups || {};
+   };
+   ```
+
+---
+
+### 🎉 Why SigPro Router?
+
+- **Zero config** - Works immediately
+- **No dependencies** - Just vanilla JS
+- **Automatic cleanup** - No memory leaks
+- **Tiny footprint** - ~0.5KB minified
+- **Hash-based** - Works everywhere
+- **RegExp support** - Full routing power
+- **Page components** - Built for `$.page`
 
 ---
 
