@@ -150,7 +150,7 @@ $.effect(() => {
 #### Computed Signal
 
 ```typescript
-import { $, $.effect } from 'sigpro';
+import { $ } from 'sigpro';
 
 const firstName = $('John');
 const lastName = $('Doe');
@@ -203,7 +203,7 @@ Signal that automatically syncs with localStorage or sessionStorage.
 
 ### Basic Persistent State
 ```js
-import { $.storage } from 'sigpro';
+import { $ } from 'sigpro';
 
 // Automatically saves to localStorage
 const theme = $.storage('theme', 'light');
@@ -221,7 +221,7 @@ const tempData = $.storage('temp', {}, sessionStorage);
 
 ### Real-World Example
 ```js
-import { $.storage, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 // User preferences persist across sessions
 const settings = $.storage('app-settings', {
@@ -250,7 +250,7 @@ const view = html`
 
 ### Shopping Cart Example
 ```js
-import { $.storage, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 const cart = $.storage('shopping-cart', []);
 
@@ -293,7 +293,7 @@ Executes a function and automatically re-runs it when its dependencies change.
 #### Basic Effect
 
 ```typescript
-import { $, $.effectffect } from 'sigpro';
+import { $ } from 'sigpro';
 
 const count = $(0);
 const name = $('World');
@@ -313,7 +313,7 @@ name('Universe'); // No log (name is not a dependency)
 #### Effect with Cleanup
 
 ```typescript
-import { $, $.effectffect } from 'sigpro';
+import { $ } from 'sigpro';
 
 const userId = $(1);
 
@@ -341,7 +341,7 @@ userId(2); // Previous subscription cleaned up, new one created
 #### Nested Effects
 
 ```typescript
-import { $, $.effectffect } from 'sigpro';
+import { $ } from 'sigpro';
 
 const show = $(true);
 const count = $(0);
@@ -364,7 +364,7 @@ show(true);  // Inner effect recreated, logs "Count changed: 1"
 #### Manual Effect Control
 
 ```typescript
-import { $, $.effectffect } from 'sigpro';
+import { $ } from 'sigpro';
 
 const count = $(0);
 
@@ -390,7 +390,7 @@ Simple fetch wrapper with automatic JSON handling and optional loading signal. P
 
 ### Basic Fetch
 ```js
-import { $, $.fetch } from 'sigpro';
+import { $ } from 'sigpro';
 
 const userData = $(null);
 
@@ -400,7 +400,7 @@ const result = await $.fetch('/api/users', { name: 'John' });
 
 ### Fetch with Loading State
 ```js
-import { $, $.fetch } from 'sigpro';
+import { $ } from 'sigpro';
 
 const loading = $(false);
 const userData = $(null);
@@ -444,7 +444,7 @@ Reactive WebSocket wrapper with automatic reconnection and signal-based state ma
 
 ### Basic WebSocket
 ```js
-import { $.ws } from 'sigpro';
+import { $ } from 'sigpro';
 
 const socket = $.ws('wss://echo.websocket.org');
 
@@ -470,7 +470,7 @@ const socket = $.ws('wss://api.example.com', {
 
 ### Reactive UI Integration
 ```js
-import { $.ws, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 const chat = $.ws('wss://chat.example.com');
 
@@ -842,7 +842,7 @@ Creates Custom Elements with reactive properties. Uses Light DOM (no Shadow DOM)
 #### Basic Component
 
 ```javascript
-import { $, $.component, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 $.component('my-counter', (props, context) => {
   // props contains signals for each observed attribute
@@ -881,7 +881,7 @@ Usage:
 #### Component with Named Slots
 
 ```javascript
-import { $, $.component, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 $.component('my-card', (props, { slot }) => {
   return html`
@@ -919,7 +919,7 @@ Usage:
 #### Component with Props and Events
 
 ```javascript
-import { $, $.component, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 $.component('todo-item', (props, { emit, host }) => {
   const handleToggle = () => {
@@ -961,7 +961,7 @@ Usage:
 #### Component with Cleanup
 
 ```javascript
-import { $, $.component, html, $.effect } from 'sigpro';
+import { $, html } from 'sigpro';
 
 $.component('timer-widget', (props, { onUnmount }) => {
   const seconds = $(0);
@@ -993,7 +993,7 @@ $.component('timer-widget', (props, { onUnmount }) => {
 #### Complete Context API
 
 ```javascript
-import { $, $.component, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 $.component('context-demo', (props, context) => {
   // Context properties:
@@ -1037,7 +1037,7 @@ $.component('context-demo', (props, context) => {
 #### Practical Example: Todo App Component
 
 ```javascript
-import { $, $.component, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 $.component('todo-app', () => {
   const todos = $([]);
@@ -1144,7 +1144,7 @@ Hash-based router for SPAs with reactive integration.
 #### Basic Routing
 
 ```typescript
-import { $.router, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 const router = $.router([
   {
@@ -1169,7 +1169,7 @@ document.body.appendChild(router);
 #### Route Parameters
 
 ```typescript
-import { $.router, html } from 'sigpro';
+import { $, html } from 'sigpro';
 
 const router = $.router([
   {
@@ -1198,7 +1198,7 @@ const router = $.router([
 #### Nested Routes
 
 ```typescript
-import { $.router, html, $ } from 'sigpro';
+import { $, html } from 'sigpro';
 
 const router = $.router([
   {
@@ -1247,7 +1247,7 @@ const router = $.router([
 #### Route Guards
 
 ```typescript
-import { $.router, html, $ } from 'sigpro';
+import { $, html } from 'sigpro';
 
 const isAuthenticated = $(false);
 
@@ -1283,7 +1283,7 @@ const router = $.router([
 #### Navigation
 
 ```typescript
-import { $.router } from 'sigpro';
+import { $ } from 'sigpro';
 
 // Navigate to path
 $.router.go('/user/42');
@@ -1309,7 +1309,7 @@ $.router.listen((path, oldPath) => {
 #### Route Transitions
 
 ```typescript
-import { $.router, html, $.effect } from 'sigpro';
+import { $, html } from 'sigpro';
 
 const router = $.router([
   {
