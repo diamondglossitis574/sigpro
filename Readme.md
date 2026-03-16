@@ -26,8 +26,6 @@ What emerged is a library that proves we've reached a turning point: the web is 
 | **Time to Interactive** | 🥇 **0.8s** | 🥈 1.3s | 🥉 1.4s | 1.6s | 2.3s |
 | **Initial Render** (ms) | 🥇 **124ms** | 🥈 198ms | 🥉 287ms | 298ms | 452ms |
 | **Update Performance** (ms) | 🥇 **4ms** | 🥈 5ms | 🥈 5ms | 🥉 7ms | 18ms |
-| **Memory Usage** (MB) | 🥇 **8.2MB** | 🥈 10.1MB | 12.4MB | 🥉 11.8MB | 18.7MB |
-| **FPS Average** | 🥇 **58.3** | 🥈 58.0 | 🥉 57.3 | 56.0 | 50.0 |
 | **Code Splitting** | 🥇 **Zero overhead** | 🥈 Minimal | 🥉 Moderate | 🥉 Moderate | High |
 | **Learning Curve** (hours) | 🥇 **2h** | 🥈 20h | 🥉 30h | 40h | 60h |
 | **Dependencies** | 🥇 0 | 🥇 0 | 🥇 0 | 🥈 2 | 🥉 5 |
@@ -35,19 +33,6 @@ What emerged is a library that proves we've reached a turning point: the web is 
 | **Browser Native** | 🥇 **Yes** | 🥈 Partial | 🥉 Partial | 🥉 Partial | No |
 | **Framework Lock-in** | 🥇 **None** | 🥈 Medium | 🥉 High | 🥈 Medium | 🥉 High |
 | **Longevity** (standards-based) | 🥇 **10+ years** | 🥈 5 years | 🥉 3 years | 🥈 5 years | 🥈 5 years |
-
-## 🎯 Scientific Conclusion
-
-✅ **Bundle Size** – 70% smaller than Svelte, 88% smaller than React  
-✅ **Time to Interactive** – 43% faster than Solid, 65% faster than React  
-✅ **Initial Render** – 57% faster than Solid, 73% faster than React  
-✅ **Update Performance** – 25% faster than Solid/Svelte, 78% faster than React  
-✅ **Memory Usage** – 34% less than Vue, 56% less than React  
-✅ **Code Splitting** – Zero overhead, true dynamic imports  
-✅ **Zero Dependencies** – No npm baggage, no security debt  
-✅ **No Compilation** – Write code, run code. That's it.  
-✅ **Browser Native** – Built on Web Components, Custom Elements, vanilla JS  
-✅ **No Lock-in** – Your code works forever, even if SigPro disappears  
 
 **The Verdict:** While other frameworks build parallel universes with proprietary syntax and compilation steps, SigPro embraces the web platform. The result isn't just smaller bundles or faster rendering—it's code that will still run 10 years from now, in any browser, without maintenance.
 
