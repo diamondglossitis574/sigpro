@@ -260,7 +260,7 @@ const CartView = html`
     <h3>Cart (${() => cart().length} items)</h3>
     <ul>
       ${() => cart().map(item => html`
-        <li>${item.name} - $.storage{item.price}</li>
+        <li>${item.name} - ${item.price}</li>
       `)}
     </ul>
     <button @click=${() => cart([])}>Clear Cart</button>
