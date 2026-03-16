@@ -286,7 +286,7 @@ $.storage('temp', null); // Removes 'temp' from storage
 
 ---
 
-### `$.effectffect(effect)` - Effects
+### `$.effect(effect)` - Effects
 
 Executes a function and automatically re-runs it when its dependencies change.
 
@@ -299,7 +299,7 @@ const count = $(0);
 const name = $('World');
 
 // Effect runs immediately and on dependency changes
-$.effectffect(() => {
+$.effect(() => {
   console.log(`Count is: ${count()}`); // Only depends on count
 });
 // Log: "Count is: 0"
@@ -317,7 +317,7 @@ import { $ } from 'sigpro';
 
 const userId = $(1);
 
-$.effectffect(() => {
+$.effect(() => {
   const id = userId();
   let isSubscribed = true;
   
@@ -346,12 +346,12 @@ import { $ } from 'sigpro';
 const show = $(true);
 const count = $(0);
 
-$.effectffect(() => {
+$.effect(() => {
   if (!show()) return;
   
   // This effect is nested inside the conditional
   // It will only be active when show() is true
-  $.effectffect(() => {
+  $.effect(() => {
     console.log('Count changed:', count());
   });
 });
@@ -369,7 +369,7 @@ import { $ } from 'sigpro';
 const count = $(0);
 
 // Stop effect manually
-const stop = $.effectffect(() => {
+const stop = $.effect(() => {
   console.log('Effect running:', count());
 });
 
@@ -691,7 +691,7 @@ html`<div class=${className}></div>`
 html`<a href="${href}" class="link ${className}">Link</a>`
 
 // Reactive attributes update when signal changes
-$.effectffect(() => {
+$.effect(() => {
   // The attribute updates automatically
   console.log('Class changed:', className());
 });
