@@ -250,7 +250,7 @@ export default $.page(({ params }) => {
 
 ---
 
-## 📦 `$.component(tagName, setupFunction, observedAttributes, useShadowDOM)` - Web Components
+### 📦 `$.component(tagName, setupFunction, observedAttributes, useShadowDOM)` - Web Components
 
 Creates Custom Elements with reactive properties. Choose between **Light DOM** (default) or **Shadow DOM** for style encapsulation.
 
@@ -265,11 +265,11 @@ Creates Custom Elements with reactive properties. Choose between **Light DOM** (
 
 ---
 
-### 🏠 **Light DOM** (`useShadowDOM = false`) - Default
+#### 🏠 **Light DOM** (`useShadowDOM = false`) - Default
 
 The component **inherits global styles** from the application. Ideal for components that should visually integrate with the rest of the interface.
 
-#### Example: Button with Tailwind CSS
+##### Example: Button with Tailwind CSS
 
 ```javascript
 // button-tailwind.js
@@ -307,7 +307,7 @@ $.component('tw-button', (props, { slot, emit }) => {
 </tw-button>
 ```
 
-#### Example: Form Input with Validation
+##### Example: Form Input with Validation
 
 ```javascript
 // form-input.js
@@ -357,7 +357,7 @@ $.component('form-input', (props, { emit }) => {
 </form-input>
 ```
 
-#### Example: Card that uses global design system
+##### Example: Card that uses global design system
 
 ```javascript
 // content-card.js
@@ -389,14 +389,14 @@ $.component('content-card', (props, { slot }) => {
 
 ---
 
-### 🛡️ **Shadow DOM** (`useShadowDOM = true`) - Encapsulated
+#### 🛡️ **Shadow DOM** (`useShadowDOM = true`) - Encapsulated
 
 The component **encapsulates its styles** completely. External styles don't affect it, and its styles don't leak out. Perfect for:
 - UI libraries distributed across projects
 - Third-party widgets
 - Components with very specific styling needs
 
-#### Example: Calendar Component (Distributable UI)
+##### Example: Calendar Component (Distributable UI)
 
 ```javascript
 // ui-calendar.js
@@ -511,7 +511,7 @@ $.component('ui-calendar', (props, { select }) => {
 <ui-calendar date="2024-03-15"></ui-calendar>
 ```
 
-#### Example: Third-party Chat Widget
+##### Example: Third-party Chat Widget
 
 ```javascript
 // chat-widget.js
@@ -752,7 +752,7 @@ const tempData = $.storage('temp', {}, sessionStorage);
 
 ---
 
-## 🧭 `$.router(routes)` - Hash-Based Router
+### 🧭 `$.router(routes)` - Hash-Based Router
 
 Creates a simple, powerful hash-based router for Single Page Applications (SPAs) with **automatic page cleanup** and **zero configuration**. Built on native browser APIs - no dependencies, no complex setup.
 
