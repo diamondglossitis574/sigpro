@@ -250,7 +250,7 @@ export default $.page(({ params }) => {
 
 ---
 
-### 📦 `$.component(tagName, setupFunction, observedAttributes, useShadowDOM)` - Web Components
+### `$.component(tagName, setupFunction, observedAttributes, useShadowDOM)` - Web Components
 
 Creates Custom Elements with reactive properties. Choose between **Light DOM** (default) or **Shadow DOM** for style encapsulation.
 
@@ -752,7 +752,7 @@ const tempData = $.storage('temp', {}, sessionStorage);
 
 ---
 
-### 🧭 `$.router(routes)` - Hash-Based Router
+### `$.router(routes)` - Hash-Based Router
 
 Creates a simple, powerful hash-based router for Single Page Applications (SPAs) with **automatic page cleanup** and **zero configuration**. Built on native browser APIs - no dependencies, no complex setup.
 
