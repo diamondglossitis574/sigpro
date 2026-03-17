@@ -56,7 +56,7 @@ export default defineConfig({
       {
         text: 'Vite Router Plugin',
         items: [
-          { text: 'Vite Plugin', link: '/vite/router' },
+          { text: 'Vite Plugin', link: '/vite/plugin' },
         ]
       }
     ],
