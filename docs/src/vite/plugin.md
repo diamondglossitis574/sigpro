@@ -18,7 +18,7 @@ The plugin is included with SigPro, but you need to add it to your Vite config:
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite';
-import { sigproRouter } from 'sigpro/vite';
+import { sigproRouter } from 'sigpro';
 
 export default defineConfig({
   plugins: [sigproRouter()]
@@ -49,15 +49,43 @@ Add the plugin to your Vite config as shown above.
 
 ### 2. Import the Generated Routes
 
+Once you have the generated routes, using them with the router is straightforward:
+
 ```javascript
 // main.js
 import { $, html } from 'sigpro';
 import { routes } from 'virtual:sigpro-routes';
 
-// Use the generated routes directly
+// Simple usage
 const router = $.router(routes);
 document.body.appendChild(router);
 ```
+
+Or directly in your template:
+
+```javascript
+// app.js
+import { $, html } from 'sigpro';
+import { routes } from 'virtual:sigpro-routes';
+
+const App = () => html`
+  <div class="app">
+    <header>
+      <h1>My Application</h1>
+    </header>
+    
+    <main class="p-4 flex flex-col gap-4 mx-auto w-full">
+      <div class="p-4 bg-base-100 rounded-box shadow-sm">
+        ${$.router(routes)}
+      </div>
+    </main>
+  </div>
+`;
+
+document.body.appendChild(App());
+```
+
+This approach keeps your template clean and lets the router handle all the page rendering automatically.
 
 ### 3. Create Pages
 

@@ -10,7 +10,7 @@ export default defineConfig({
   // CONFIGURACIÓN DE NIVEL SUPERIOR (Prioridad VitePress)
   server: {
     host: '0.0.0.0', // Forzamos escucha total
-    port: 5174,
+    port: 5173,
     // @ts-ignore - VitePress a veces no reconoce el tipo pero lo pasa a Vite
     allowedHosts: ['code.natxocc.com', '.natxocc.com'],
     strictPort: true
