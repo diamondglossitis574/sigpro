@@ -1,3 +1,11 @@
+---
+layout: default
+title: Home
+nav_order: 1
+---
+
+# SigPro ...
+
 # SigPro 🚀
 
 A minimalist reactive library for building web interfaces with signals, effects, and native web components. No compilation, no virtual DOM, just pure JavaScript and intelligent reactivity.
