@@ -22,21 +22,22 @@ export default function sigproRouter() {
     return results;
   }
 
-  // Convierte path de archivo a URL con :params
   function filePathToUrl(relativePath) {
-    // Remover extensión .js
-    let url = relativePath.replace(/\.jsx?$/, '');
+    let url = relativePath.replace(/\\/g, '/').replace(/\.jsx?$/, '');
     
-    // Convertir [param] a :param
-    url = url.replace(/\[([^\]]+)\]/g, ':$1');
-    
-    // Index files become parent path
-    if (url.endsWith('/index')) {
-      url = url.slice(0, -6); // Remove '/index'
+    if (url === 'index') {
+      return '/'; 
     }
     
-    // Ensure leading slash
-    return '/' + url.toLowerCase();
+    if (url.endsWith('/index')) {
+      url = url.slice(0, -6);
+    }
+    
+    url = url.replace(/\[([^\]]+)\]/g, ':$1');
+    
+    let finalPath = '/' + url.toLowerCase();
+    
+    return finalPath.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
   }
 
   return {
@@ -49,23 +50,16 @@ export default function sigproRouter() {
         const pagesDir = path.resolve(process.cwd(), 'src/pages');
         let files = getFiles(pagesDir);
 
-        // Sort: static routes first, then dynamic (more specific first)
         files = files.sort((a, b) => {
-          const aPath = path.relative(pagesDir, a);
-          const bPath = path.relative(pagesDir, b);
-          const aDepth = aPath.split(path.sep).length;
-          const bDepth = bPath.split(path.sep).length;
+          const aRel = path.relative(pagesDir, a).replace(/\\/g, '/');
+          const bRel = path.relative(pagesDir, b).replace(/\\/g, '/');
           
-          // Deeper paths first (more specific)
-          if (aDepth !== bDepth) return bDepth - aDepth;
-          
-          // Static before dynamic
-          const aDynamic = aPath.includes('[');
-          const bDynamic = bPath.includes('[');
+          const aDynamic = aRel.includes('[') || aRel.includes(':');
+          const bDynamic = bRel.includes('[') || bRel.includes(':');
+
           if (aDynamic !== bDynamic) return aDynamic ? 1 : -1;
-          
-          // Alphabetical
-          return aPath.localeCompare(bPath);
+
+          return bRel.length - aRel.length;
         });
 
         let imports = '';
@@ -74,16 +68,14 @@ export default function sigproRouter() {
         console.log('\n🚀 [SigPro Router] Routes generated:');
 
         files.forEach((fullPath, i) => {
+          const importPath = fullPath.replace(/\\/g, '/');
           const relativePath = path.relative(pagesDir, fullPath).replace(/\\/g, '/');
           const varName = `Page_${i}`;
           
-          // Generate URL path from file structure
           let urlPath = filePathToUrl(relativePath);
-          
-          // Check if it's dynamic (contains ':')
           const isDynamic = urlPath.includes(':');
           
-          imports += `import ${varName} from '${fullPath}';\n`;
+          imports += `import ${varName} from '${importPath}';\n`;
           
           console.log(`   ${isDynamic ? '🔗' : '📄'} ${urlPath.padEnd(30)} -> ${relativePath}`);
           
