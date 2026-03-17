@@ -3,6 +3,7 @@
   "version": "1.0.9",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://natxocc.github.io/sigpro/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/natxocc/sigpro.git"
@@ -17,5 +18,14 @@
   },
   "devDependencies": {
     "vitepress": "^1.6.4"
-  }
+  },
+  "keywords": [
+    "signals",
+    "reactive",
+    "web-components",
+    "vanilla-js",
+    "reactive-programming",
+    "signals-library",
+    "fine-grained-reactivity"
+  ]
 }
