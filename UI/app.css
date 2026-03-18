@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@plugin "@iconify/tailwind4";
+@plugin "daisyui" {
+  themes:
+    light --default,
+    dark --prefersdark;
+  include:
+    alert, avatar, badge, button, card, checkbox, collapse, drawer, dropdown, fab, fieldset, loading, indicator, input, kbd, label, list, menu, modal,
+    navbar, radio, range, select, skeleton, tab, textarea, toast, toggle, tooltip, validator, rating, mask;
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/jakarta.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  font-size: 14px;
+  /* font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; */
+}
+
+.btn-ghost {
+  border-color: transparent !important;
+}
+
+.floating-label > span {
+  font-size: 1.1rem;
+}
+
+@utility input {
+  @apply transition-all duration-300 ease-in-out outline-none shrink appearance-none items-center;
+  &:hover {
+    background-color: var(--color-base-300);
+  }
+}

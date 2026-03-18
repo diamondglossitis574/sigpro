@@ -13,9 +13,6 @@ hero:
     - theme: brand
       text: Get Started
       link: /guide/getting-started
-    - theme: alt
-      text: Why SigPro?
-      link: /guide/why
 
 features:
   - title: ⚡ 3KB gzipped

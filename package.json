@@ -17,6 +17,7 @@
     "docs:preview": "vitepress preview docs/src"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
     "vitepress": "^1.6.4"
   },
   "keywords": [
@@ -27,5 +28,8 @@
     "reactive-programming",
     "signals-library",
     "fine-grained-reactivity"
-  ]
+  ],
+  "dependencies": {
+    "daisyui": "^5.5.19"
+  }
 }

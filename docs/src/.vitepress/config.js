@@ -30,13 +30,16 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Guide', link: '/guide/getting-started' }
+      { text: 'Guide', link: '/guide/getting-started' },
+      { text: 'Api', link: '/api/quick' },
+      { text: 'UI', link: '/ui/intro' },
     ],
     sidebar: [
       {
         text: 'Introduction',
         items: [
           { text: 'What is SigPro?', link: '/' },
+          { text: 'Why', link: '/guide/why' },
           { text: 'Guide', link: '/guide/getting-started' },
         ]
       },
@@ -51,6 +54,12 @@ export default defineConfig({
           { text: 'Pages', link: '/api/pages' },
           { text: 'Components', link: '/api/components' },
           { text: 'Routing', link: '/api/routing' },
+        ]
+      },
+      {
+        text: 'SigPro UI',
+        items: [
+          { text: 'Intro', link: '/ui/intro' },
         ]
       },
       {
