@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigProUI Test</title>
+  
+  <!-- CSS de la librería UI (se procesa con Vite) -->
+  <link rel="stylesheet" href="./sigproui.css" />
+</head>
+<body>
+  <div id="app"></div>
+  
+  <script type="module">
+    import App from './app.js';
+    import lucide from 'lucide';
+    
+    // Initialize icons
+    lucide.createIcons();
+    
+    // Mount the app
+    document.getElementById('app').appendChild(App());
+  </script>
+</body>
+</html>

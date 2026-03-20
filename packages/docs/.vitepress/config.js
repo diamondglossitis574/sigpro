@@ -5,29 +5,21 @@ const isDev = process.env.NODE_ENV === 'development'
 export default defineConfig({
   title: "SigPro",
   description: "Minimalist Reactive Library",
-  base: isDev ? '/absproxy/5173/sigpro/' : '/sigpro/',
+  outDir: '../../docs',
+  base: isDev ? '/absproxy/5174/sigpro/' : '/sigpro/',
   
-  // CONFIGURACIÓN DE NIVEL SUPERIOR (Prioridad VitePress)
-  server: {
-    host: '0.0.0.0', // Forzamos escucha total
-    port: 5173,
-    // @ts-ignore - VitePress a veces no reconoce el tipo pero lo pasa a Vite
-    allowedHosts: ['code.natxocc.com', '.natxocc.com'],
-    strictPort: true
-  },
-
   // CONFIGURACIÓN DE VITE (Motor interno)
   vite: {
+    outDir: '../../docs',
+    base: isDev ? '/absproxy/5174/sigpro/' : '/sigpro/',
     server: {
-      allowedHosts: true, // Permitir todo en el motor interno
-      hmr: {
-        host: 'code.natxocc.com',
-        protocol: 'wss'
-      }
+      allowedHosts: true,
+      port: 5174,
     }
   },
 
   themeConfig: {
+    logo: '/logo.svg',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/getting-started' },

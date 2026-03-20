@@ -3,6 +3,12 @@
  * Requiere Tailwind CSS y DaisyUI
  */
 
+/* Tailwind + DaisyUI */
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark;
+}
+
 /* Utilidades personalizadas de SigProUI */
 .btn-ghost {
   border-color: transparent !important;
@@ -78,6 +84,21 @@
   height: 1rem;
 }
 
+.loading.loading-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.loading.loading-md {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.loading.loading-lg {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
 .hidden {
   display: none;
 }
@@ -89,4 +110,37 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Loading spinner variants */
+.loading-spinner {
+  border-right-color: transparent;
+}
+
+.loading-dots::after {
+  content: "";
+  animation: dots 1s infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: "."; }
+  40% { content: ".."; }
+  60%, 100% { content: "..."; }
+}
+
+.loading-ring {
+  border-bottom-color: transparent;
+}
+
+.loading-facebook::after {
+  content: "";
+  animation: facebook 1.5s infinite;
+}
+
+@keyframes facebook {
+  0% { transform: scale(0, 0.035); }
+  25% { transform: scale(0.035, 0.035); }
+  50% { transform: scale(0.035, 1); }
+  75% { transform: scale(1, 1); }
+  100% { transform: scale(1, 0.035); }
 }
