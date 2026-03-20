@@ -1,6 +1,6 @@
 {
   "name": "sigpro",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "type": "module",
   "license": "MIT",
   "homepage": "https://natxocc.github.io/sigpro/",
@@ -14,13 +14,9 @@
   "scripts": {
     "docs:dev": "vitepress dev packages/docs",
     "docs:build": "vitepress build packages/docs",
-    "docs:preview": "vitepress preview packages/docs",
-    "ui:dev": "vite packages/sigproui",
-    "ui:build": "vite build packages/sigproui"
+    "docs:preview": "vitepress preview packages/docs"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.2",
-    "vite": "^8.0.0",
     "vitepress": "^1.6.4"
   },
   "keywords": [
@@ -31,8 +27,5 @@
     "reactive-programming",
     "signals-library",
     "fine-grained-reactivity"
-  ],
-  "dependencies": {
-    "daisyui": "^5.5.19"
-  }
+  ]
 }
