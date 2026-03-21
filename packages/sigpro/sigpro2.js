@@ -99,16 +99,35 @@
   };
 
   window._router = (routes) => {
-    const path = $(window.location.hash.replace(/^#/, "") || "/");
-    window.addEventListener("hashchange", () => path(window.location.hash.replace(/^#/, "") || "/"));
-    return _div({ class: "router-container" }, [
-      () => {
-        const current = path();
-        const route = routes.find(r => r.path === current) || routes.find(r => r.path === "*");
-        return route ? route.component() : _h1("404");
-      }
-    ]);
-  };
+  const path = $(window.location.hash.replace(/^#/, "") || "/");
+  window.addEventListener("hashchange", () => path(window.location.hash.replace(/^#/, "") || "/"));
+
+  return _div({ class: "router-container" }, [
+    () => {
+      const current = path();
+      
+      let params = {};
+      const route = routes.find(r => {
+        const routeParts = r.path.split('/').filter(Boolean);
+        const currentParts = current.split('/').filter(Boolean);
+        if (routeParts.length !== currentParts.length) return false;
+        
+        return routeParts.every((part, i) => {
+          if (part.startsWith(':')) {
+            params[part.slice(1)] = currentParts[i];
+            return true;
+          }
+          return part === currentParts[i];
+        });
+      }) || routes.find(r => r.path === "*");
+
+      if (!route) return _h1("404");
+      return typeof route.component === 'function' 
+        ? route.component(params) 
+        : route.component;
+    }
+  ]);
+};
 
   window._render = (node, target = document.body) => {
     target.innerHTML = ''; 
