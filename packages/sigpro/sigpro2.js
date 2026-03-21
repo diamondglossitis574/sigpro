@@ -1,5 +1,5 @@
 /**
- * SigPro 2.0 - Core Engine
+ * SigPro 2.0 - Complete Reactive Engine
  * @author Gemini & User
  */
 (() => {
@@ -7,12 +7,12 @@
   let activeEffect = null;
 
   /**
-   * Crea una Señal (Estado) o una Computada (Derivado).
+   * Creates a Signal (State) or a Computed (Derived state).
    * @template T
-   * @param {T|function():T} initial - Valor inicial o función de cálculo.
-   * @returns {{(newValue?: T|function(T):T): T}} Getter/Setter de la señal.
+   * @param {T|function():T} initial - Initial value or a computation function.
+   * @returns {{(newValue?: T|function(T):T): T}} A getter/setter function.
    */
-  window.$ = (initial) => {
+  const $ = (initial) => {
     /** @type {Set<Function>} */
     const subs = new Set();
     
@@ -45,11 +45,10 @@
   };
 
   /**
-   * Crea un Efecto secundario reactivo.
-   * @param {function():void} fn - Función a ejecutar cuando cambien sus dependencias.
-   * @returns {function():void} La función del efecto.
+   * Creates a reactive effect.
+   * @param {function():void} fn - The function to execute reactively.
    */
-  window._$ = (fn) => {
+  const _$ = (fn) => {
     const effect = () => {
       const prev = activeEffect;
       activeEffect = effect;
@@ -60,13 +59,13 @@
   };
 
   /**
-   * Constructor Universal de Elementos DOM.
-   * @param {string} tag - Etiqueta HTML.
-   * @param {Object<string, any> | HTMLElement | Array | string} [props] - Propiedades o hijos.
-   * @param {Array | HTMLElement | string | function} [children] - Hijos del elemento.
-   * @returns {HTMLElement} El elemento DOM creado.
+   * Universal DOM Constructor (Hyperscript).
+   * @param {string} tag - HTML Tag name.
+   * @param {Object<string, any> | HTMLElement | Array | string} [props] - Attributes or children.
+   * @param {Array | HTMLElement | string | function} [children] - Element children.
+   * @returns {HTMLElement}
    */
-  window.$$ = (tag, props = {}, children = []) => {
+  const $$ = (tag, props = {}, children = []) => {
     const el = document.createElement(tag);
     if (typeof props !== 'object' || props instanceof Node || Array.isArray(props)) {
       children = props; props = {};
@@ -90,7 +89,7 @@
         el.setAttribute(key, val);
       }
     }
-    /** @param {any} c */
+    
     const append = (c) => {
       if (Array.isArray(c)) return c.forEach(append);
       if (typeof c === 'function') {
@@ -109,12 +108,61 @@
   };
 
   /**
-   * Renderiza la aplicación en un contenedor.
-   * @param {HTMLElement | function():HTMLElement} node - Elemento raíz o función que lo retorna.
-   * @param {HTMLElement} [target] - Contenedor destino (por defecto document.body).
+   * Renders the application into a target element.
+   * @param {HTMLElement | function():HTMLElement} node 
+   * @param {HTMLElement} [target] 
    */
-  window.$render = (node, target = document.body) => {
+  const $render = (node, target = document.body) => {
     target.innerHTML = '';
     target.appendChild(typeof node === 'function' ? node() : node);
   };
+
+  /**
+   * Hash-based Reactive Router.
+   * @param {Array<{path: string, component: function|HTMLElement}>} routes 
+   * @returns {HTMLElement}
+   */
+  const $router = (routes) => {
+    const sPath = $(window.location.hash.replace(/^#/, "") || "/");
+    window.addEventListener("hashchange", () => sPath(window.location.hash.replace(/^#/, "") || "/"));
+
+    return $$('div', { class: "router-view" }, [
+      () => {
+        const current = sPath();
+        let params = {};
+        const route = routes.find(r => {
+          const rP = r.path.split('/').filter(Boolean);
+          const cP = current.split('/').filter(Boolean);
+          if (rP.length !== cP.length) return false;
+          return rP.every((part, i) => {
+            if (part.startsWith(':')) { params[part.slice(1)] = cP[i]; return true; }
+            return part === cP[i];
+          });
+        }) || routes.find(r => r.path === "*");
+
+        if (!route) return $$('h1', '404');
+        return typeof route.component === 'function' ? route.component(params) : route.component;
+      }
+    ]);
+  };
+
+  /**
+   * Registers a plugin into the SigPro ecosystem.
+   * @param {string} name 
+   * @param {Object<string, Function>} exports 
+   */
+  const $use = (name, exports) => {
+    Object.assign(window, exports);
+    console.log(`%c[SigPro] Plugin Loaded: ${name}`, "color: #00ff7f; font-weight: bold;");
+  };
+
+  // --- AUTO-INJECT STANDARD TAGS ---
+  const tags = ['div', 'span', 'p', 'button', 'h1', 'h2', 'h3', 'ul', 'li', 'a', 'label', 'section', 'nav', 'main', 'header', 'footer', 'input', 'img', 'form'];
+  const standardTags = {};
+  tags.forEach(tag => {
+    standardTags[tag] = (p, c) => $$(tag, p, c);
+  });
+
+  // Global Exports
+  Object.assign(window, { $, _$, $$, $render, $router, $use, ...standardTags });
 })();
