@@ -1,20 +1,25 @@
 {
   "name": "sigpro",
-  "version": "1.0.14",
+  "version": "1.1.0",
   "type": "module",
   "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./plugins": "./plugins/index.js",
+    "./vite/*": "./vite/*.js"
+  },
   "homepage": "https://natxocc.github.io/sigpro/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/natxocc/sigpro.git"
+    "url": "https://github.com/natxocc/sigpro.git"
   },
   "bugs": {
     "url": "https://github.com/natxocc/sigpro/issues"
   },
   "scripts": {
-    "docs:dev": "vitepress dev packages/docs",
-    "docs:build": "vitepress build packages/docs",
-    "docs:preview": "vitepress preview packages/docs"
+    "docs:dev": "vitepress dev src/docs",
+    "docs:build": "vitepress build src/docs",
+    "docs:preview": "vitepress preview src/docs"
   },
   "devDependencies": {
     "vitepress": "^1.6.4"
