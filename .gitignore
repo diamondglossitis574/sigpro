@@ -10,6 +10,7 @@ coverage/
 .cache/
 .parcel-cache/
 .turbo/
+*.lock
 
 # Logs
 npm-debug.log*

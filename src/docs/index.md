@@ -6,7 +6,7 @@ hero:
   text: Atomic Unified Reactive Engine
   tagline: Fine-grained reactivity, built-in routing, and modular plugins. All under 2KB.
   image:
-    src: /logo.png
+    src: /logo.svg
     alt: SigPro Logo
   actions:
     - theme: brand
