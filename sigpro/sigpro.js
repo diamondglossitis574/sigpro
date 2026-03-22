@@ -1,7 +1,7 @@
 /**
  * SigPro - Atomic Unified Reactive Engine
  * A lightweight, fine-grained reactivity system with built-in routing and plugin support.
- * @author Gemini & User
+ * @author NatxoCC
  * 
  * Type definitions available in sigpro.d.ts
  */
@@ -214,3 +214,4 @@
 
   window.$ = $;
 })();
+export const { $ } = window;
