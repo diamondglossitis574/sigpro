@@ -111,7 +111,15 @@
     return el;
   };
 
-  const tags = ['div', 'span', 'p', 'button', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'a', 'label', 'section', 'nav', 'main', 'header', 'footer', 'input', 'form', 'img', 'select', 'option', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'canvas', 'video', 'audio'];
+  const tags = [
+    'div', 'span', 'p', 'section', 'nav', 'main', 'header', 'footer', 'article', 'aside',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+    'button', 'a', 'label', 'strong', 'em', 'code', 'pre', 'br', 'hr', 'small', 'i', 'b', 'u', 'mark',
+    'input', 'form', 'select', 'option', 'textarea', 'fieldset', 'legend', 'details', 'summary',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td', 'tfoot', 'caption',
+    'img', 'canvas', 'video', 'audio', 'svg', 'path', 'iframe'
+  ];
+
   tags.forEach(t => window[t] = (p, c) => $.html(t, p, c));
 
   /**
