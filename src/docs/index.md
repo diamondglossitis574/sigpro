@@ -14,7 +14,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://git.natxocc.com/sigpro/
+      link: https://github.com/natxocc/sigpro
 
 features:
   - title: Atomic Reactivity
