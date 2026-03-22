@@ -4,10 +4,34 @@
   "type": "module",
   "license": "MIT",
   "exports": {
-    ".": "./index.js",
-    "./plugins": "./plugins/index.js",
-    "./vite/*": "./vite/*.js"
+    ".": {
+      "import": "./index.js",
+      "types": "./sigpro/sigpro.d.ts"
+    },
+    "./plugins": {
+      "import": "./plugins/index.js",
+      "types": "./plugins/index.d.ts"
+    },
+    "./vite/*": {
+      "import": "./vite/*.js",
+      "types": "./vite/*.d.ts"
+    }
   },
+  "types": "./sigpro/sigpro.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": ["./sigpro/sigpro.d.ts"],
+      "plugins": ["./plugins/index.d.ts"]
+    }
+  },
+  "files": [
+    "index.js",
+    "sigpro/",
+    "plugins/",
+    "vite/",
+    "README.md",
+    "LICENSE"
+  ],
   "homepage": "https://natxocc.github.io/sigpro/",
   "repository": {
     "type": "git",

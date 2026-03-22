@@ -1,4 +1,28 @@
-// src/vite/index.js
-import sigproRouterPlugin from './sigproRouter.js';
-export const sigproRouter = sigproRouterPlugin;
-export default sigproRouterPlugin;
+/**
+ * SigPro Vite Plugin
+ * @module sigpro/vite
+ */
+
+// ✅ Correcto: importas la función y la llamas como quieras
+import sigproRouter from './router.js';
+
+/**
+ * Vite plugin for SigPro file-based routing
+ * 
+ * @example
+ * ```javascript
+ * // vite.config.js
+ * import sigproRouter from 'sigpro/vite';
+ * 
+ * export default {
+ *   plugins: [sigproRouter()]
+ * };
+ * ```
+ * 
+ * @param {import('./index.d.ts').SigProRouterOptions} [options] - Plugin configuration options
+ * @returns {import('vite').Plugin} Vite plugin instance
+ */
+export default sigproRouter;
+
+// Opcional: también exportar como named export
+export { sigproRouter };

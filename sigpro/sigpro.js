@@ -2,28 +2,19 @@
  * SigPro - Atomic Unified Reactive Engine
  * A lightweight, fine-grained reactivity system with built-in routing and plugin support.
  * @author Gemini & User
+ * 
+ * Type definitions available in sigpro.d.ts
  */
 (() => {
   /** @type {Function|null} Internal tracker for the currently executing reactive effect. */
   let activeEffect = null;
 
   /**
-     * @typedef {Object} SigPro
-     * @property {function(any|function, string=): Function} $ - Creates a Signal or Computed. Optional key for localStorage.
-     * @property {function(string, Object=, any=): HTMLElement} html - Creates a reactive HTML element.
-     * @property {function((HTMLElement|function), (HTMLElement|string)=): void} mount - Mounts a component to the DOM.
-     * @property {function(Array<Object>): HTMLElement} router - Initializes a hash-based router.
-     * @property {function(string): void} router.go - Programmatic navigation to a hash path.
-     * @property {function((function|string|Array<string>)): (Promise<SigPro>|SigPro)} plugin - Extends SigPro or loads external scripts.
-     */
-
-  /**
-     * Creates a Signal (state) or a Computed/Effect (reaction).
-     * Supports optional persistence in localStorage.
-     * * @param {any|function} initial - Initial value or a function for computed logic.
-     * @param {string} [key] - Optional localStorage key for automatic state persistence.
-     * @returns {Function} A reactive accessor/mutator function.
-     */
+   * Creates a reactive Signal or Computed value
+   * @param {any|Function} initial - Initial value or computed function
+   * @param {string} [key] - Optional localStorage key for persistence
+   * @returns {Function} Reactive accessor/mutator function
+   */
   const $ = (initial, key) => {
     const subs = new Set();
 
@@ -69,11 +60,11 @@
   };
 
   /**
-   * Hyperscript engine to render reactive HTML nodes.
-   * @param {string} tag - The HTML tag name (e.g., 'div', 'button').
-   * @param {Object} [props] - Attributes, events (onclick), or reactive props ($value, $class).
-   * @param {any} [content] - String, Node, Array of nodes, or reactive function.
-   * @returns {HTMLElement} A live DOM element linked to SigPro signals.
+   * Creates reactive HTML elements
+   * @param {string} tag - HTML tag name
+   * @param {Object} [props] - Attributes and event handlers
+   * @param {any} [content] - Child content
+   * @returns {HTMLElement}
    */
   $.html = (tag, props = {}, content = []) => {
     const el = document.createElement(tag);
@@ -87,12 +78,10 @@
         el.addEventListener(key.toLowerCase().slice(2), val);
       } else if (key.startsWith('$')) {
         const attr = key.slice(1);
-        // Two-way binding for inputs
         if ((attr === 'value' || attr === 'checked') && typeof val === 'function') {
           const ev = attr === 'checked' ? 'change' : 'input';
           el.addEventListener(ev, e => val(attr === 'checked' ? e.target.checked : e.target.value));
         }
-        // Reactive attribute update
         $(() => {
           const v = typeof val === 'function' ? val() : val;
           if (attr === 'value' || attr === 'checked') el[attr] = v;
@@ -126,9 +115,9 @@
   tags.forEach(t => window[t] = (p, c) => $.html(t, p, c));
 
   /**
-   * Application mounter.
-   * @param {HTMLElement|function} node - Root component or element to mount.
-   * @param {HTMLElement|string} [target=document.body] - Target element or CSS selector.
+   * Mounts a component to the DOM
+   * @param {HTMLElement|Function} node - Component or element to mount
+   * @param {HTMLElement|string} [target=document.body] - Target element or selector
    */
   $.mount = (node, target = document.body) => {
     const el = typeof target === 'string' ? document.querySelector(target) : target;
@@ -139,11 +128,10 @@
   };
 
   /**
- * Initializes a reactive hash-based router.
- * Maps URL hash changes to component rendering and supports Vite's dynamic imports.
- * * @param {Array<{path: string, component: Function|Promise|HTMLElement}>} routes - Array of route objects.
- * @returns {HTMLElement} A reactive div container that swaps content based on the current hash.
- */
+   * Initializes a hash-based router
+   * @param {Array<{path: string, component: Function|Promise|HTMLElement}>} routes
+   * @returns {HTMLElement}
+   */
   $.router = (routes) => {
     const sPath = $(window.location.hash.replace(/^#/, "") || "/");
     window.addEventListener("hashchange", () => sPath(window.location.hash.replace(/^#/, "") || "/"));
@@ -185,20 +173,17 @@
   };
 
   /**
-   * Programmatically navigates to a specific path using the hash.
-   * * @param {string} path - The destination path (e.g., '/home' or 'settings').
-   * @example
-   * $.router.go('/profile/42');
+   * Programmatic navigation
+   * @param {string} path - Destination path
    */
   $.router.go = (path) => {
     window.location.hash = path.startsWith('/') ? path : `/${path}`;
   };
 
   /**
-   * Polymorphic Plugin System.
-   * Registers internal functions or loads external .js files as plugins.
-   * @param {function|string|Array<string>} source - Plugin function or URL(s).
-   * @returns {Promise<SigPro>|SigPro} Resolves with the $ instance after loading or registering.
+   * Plugin system - extends SigPro or loads external scripts
+   * @param {Function|string|string[]} source - Plugin or script URL(s)
+   * @returns {Promise<SigPro>|SigPro}
    */
   $.plugin = (source) => {
     if (typeof source === 'function') {
