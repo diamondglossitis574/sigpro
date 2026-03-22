@@ -1,6 +1,6 @@
-# Application Mounter: `$.mount`
+# Application Mounter: `$.router.mount` (Core)
 
-The `$.mount` function is the entry point of your reactive world. It takes a **SigPro component** (or a plain DOM node) and injects it into the real document.
+The `$.mount` function is the entry point of your reactive world. It takes a **SigPro component** (or a plain DOM node) and injects it into the real document, bridging the gap between your logic and the browser.
 
 ## 1. Syntax: `$.mount(node, [target])`
 
@@ -14,18 +14,19 @@ The `$.mount` function is the entry point of your reactive world. It takes a **S
 ## 2. Usage Scenarios
 
 ### A. The "Clean Slate" (Main Entry)
-In a modern app (like our `main.js` example), you usually want to control the entire page. By default, `$.mount` clears the target's existing HTML before mounting.
+In a modern app, you usually want to control the entire page. By default, `$.mount` clears the target's existing HTML before mounting your application.
 
 ```javascript
 // src/main.js
-import { $ } from 'SigPro';
+import { $ } from 'sigpro';
 import App from './App.js';
 
-$.mount(App); // Mounts to <body> by default
+// SigPro: No .then() needed, global tags are ready immediately
+$.mount(App); 
 ```
 
 ### B. Targeting a Specific Container
-If you have an existing HTML structure and only want **SigPro** to manage a specific part (like a `#root` div), pass a CSS selector or a reference.
+If you have an existing HTML structure and want **SigPro** to manage only a specific section (like a `#root` div), pass a CSS selector or a reference.
 
 ```html
 <div id="sidebar"></div>
@@ -33,7 +34,7 @@ If you have an existing HTML structure and only want **SigPro** to manage a spec
 ```
 
 ```javascript
-// Local mount to a specific ID
+// Mount to a specific ID
 $.mount(MyComponent, '#app-root');
 
 // Or using a direct DOM reference
@@ -43,11 +44,11 @@ $.mount(SidebarComponent, sidebar);
 
 ---
 
-## 3. Mounting with Pure HTML
-One of SigPro's strengths is that it works perfectly alongside "Old School" HTML. You can create a reactive "island" inside a static page.
+## 3. Creating "Reactive Islands"
+One of SigPro's strengths is its ability to work alongside "Old School" static HTML. You can inject a reactive widget into any part of a legacy page.
 
 ```javascript
-// A small reactive widget in a static .js file
+// A small reactive widget
 const CounterWidget = () => {
   const $c = $(0);
   return button({ onclick: () => $c(v => v + 1) }, [
@@ -55,41 +56,40 @@ const CounterWidget = () => {
   ]);
 };
 
-// Mount it into an existing div in your HTML
+// Mount it into an existing div in your static HTML
 $.mount(CounterWidget, '#counter-container');
 ```
 
 ---
 
-## 4. How it Works (The "Wipe" Logic)
-When `$.mount` is called, it performs two critical steps:
+## 4. How it Works (Lifecycle)
+When `$.mount` is called, it performs three critical steps:
 
-1. **Clearance:** It sets `target.innerHTML = ''`. This ensures no "zombie" HTML from previous renders or static placeholders interferes with your app.
-2. **Injection:** It appends your component. If you passed a **Function**, it executes it first to get the DOM node.
-
-
+1. **Resolution:** If you passed a **Function**, it executes it once to generate the initial DOM node.
+2. **Clearance:** It sets `target.innerHTML = ''`. This prevents "zombie" HTML or static placeholders from interfering with your app.
+3. **Injection:** It appends the resulting node to the target.
 
 ---
 
 ## 5. Global vs. Local Scope
 
 ### Global (The "Framework" Way)
-In a standard Vite/ESM project, you initialize SigPro globally in `main.js`. This makes the `$` and the tag helpers (`div`, `button`, etc.) available everywhere in your project.
+In a standard Vite project, you initialize SigPro in your entry file. This makes `$` and the tag helpers (`div`, `button`, etc.) available globally for a clean, declarative developer experience.
 
 ```javascript
-// main.js - Global Initialization
-import 'SigPro'; 
+// src/main.js
+import { $ } from 'sigpro'; 
 
-// Now any other file can just use:
+// Any component in any file can now use:
 $.mount(() => h1("Global App"));
 ```
 
 ### Local (The "Library" Way)
-If you are worried about polluting the global `window` object, you can import and use SigPro locally within a specific module.
+If you prefer to avoid polluting the `window` object, you can import and use SigPro locally within specific modules.
 
 ```javascript
-// widget.js - Local usage
-import { $ } from 'SigPro';
+// widget.js
+import { $ } from 'sigpro';
 
 const myNode = $.html('div', 'Local Widget');
 $.mount(myNode, '#widget-target');
@@ -97,12 +97,11 @@ $.mount(myNode, '#widget-target');
 
 ---
 
-### Summary Cheat Sheet
+## 6. Summary Cheat Sheet
 
 | Goal | Code |
 | :--- | :--- |
 | **Mount to body** | `$.mount(App)` |
 | **Mount to ID** | `$.mount(App, '#id')` |
 | **Mount to Element** | `$.mount(App, myElement)` |
-| **Reactive Widget** | `$.mount(() => div("Hi"), '#widget')` |
-
+| **Direct Function** | `$.mount(() => div("Hi"), '#widget')` |

@@ -1,47 +1,38 @@
+
 # SigPro ⚡
-**The Ultra-Lightweight, Reactive Plugin-Based Framework.**
+**The Ultra-Lightweight, Atomic Reactive Engine.**
 
-SigPro 2 is a modern, minimalist JavaScript framework designed for developers who want the power of reactivity without the overhead of heavy runtimes. It weighs less than **2KB**, uses a signal-based architecture, and is fully extensible through a modular plugin system.
+SigPro is a modern, minimalist JavaScript engine designed for developers who want surgical reactivity without the overhead. It weighs less than **2KB**, uses a high-performance signal-based architecture, and features a built-in router and native state persistence.
 
 
-[![npm version](https://img.shields.io/npm/v/sigpro.svg)](https://www.npmjs.com/package/sigpro)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/sigpro)](https://bundlephobia.com/package/sigpro)
-[![license](https://img.shields.io/npm/l/sigpro)](https://github.com/natxocc/sigpro/blob/main/LICENSE)
 
 ---
 
-## 🚀 Key Features
+## 🚀 Why SigPro?
 
-* **Nano-Sized:** Optimized for speed and minimal bundle impact.
-* **Signal-Based Reactivity:** Surgical DOM updates—only what changes is re-rendered.
-* **Plugin Ecosystem:** Modular by design. Only load what you need (Router, Fetch, Storage, etc.).
-* **File-Based Routing:** Automated route generation via Vite.
-* **Zero Boilerplate:** No complex build steps or proprietary syntax. Just JavaScript.
+Unlike traditional frameworks that use a **Virtual DOM** (React) or complex **Compilers** (Svelte), SigPro uses **Atomic Reactivity**. 
+
+* **Surgical Updates:** When a Signal changes, SigPro knows exactly which text node or attribute needs to update. It doesn't "diff" trees; it directly touches the DOM.
+* **Zero Dependencies:** No extra libraries, no heavy runtimes. Just pure, optimized JavaScript.
+* **Synchronous by Design:** Eliminates the "async-bottleneck". Your app environment is ready the moment you import it.
 
 ---
 
 ## 📦 Installation
 
-Install the core engine and the essential plugins.
-
-::: code-group
-```bash [NPM]
+```bash
 npm install sigpro
 ```
-
-```bash [Bun]
-bun add sigpro
-```
-:::
 
 ---
 
 ## 🛠️ Quick Start
 
-### 1. Configure Vite
-Add the automatic router to your `vite.config.js`.
+### 1. Automatic File-Based Routing (Vite)
+SigPro leverages Vite to turn your folder structure into your app's navigation.
 
 ```javascript
+// vite.config.js
 import { defineConfig } from 'vite';
 import { sigproRouter } from 'sigpro/vite';
 
@@ -50,93 +41,108 @@ export default defineConfig({
 });
 ```
 
-### 2. Initialize the App
-Register plugins and mount your application shell.
+### 2. The Entry Point
+Forget about complex bootstrap sequences. In SigPro, you just mount and go.
 
 ```javascript
 // src/main.js
 import { $ } from 'sigpro';
-import { Router, Fetch, UI } from 'sigpro/plugins';
+import App from './App.js';
 
-$.plugin([Router, Fetch, UI]).then(() => {
-  import('./App.js').then(app => $.mount(app.default, '#app'));
-});
+$.mount(App, '#app'); // Your reactive journey starts here.
 ```
 
 ---
 
-## 🧩 Official Plugins
+## 💎 Core Pillars
 
-SigPro is powered by a "Pay-only-for-what-you-use" architecture.
+### 🚦 Built-in Router (`$.router`)
+The router is now part of the core. It supports dynamic parameters and **Automatic Code Splitting**. Each page in your `src/pages` folder is only loaded when visited.
 
-### 🚦 Router (`_router`)
-Automated file-based routing. Just create a file in `src/pages/` and it becomes a route.
 ```javascript
 import { routes } from 'virtual:sigpro-routes';
-const App = () => main(_router(routes));
+
+export default () => div({ class: 'app-container' }, [
+  header([
+    h1("SigPro App"),
+    nav([
+      button({ onclick: () => $.router.go('/') }, "Home"),
+      button({ onclick: () => $.router.go('/user/42') }, "Profile")
+    ])
+  ]),
+  // $.router acts as a reactive "portal" for your pages
+  main($.router(routes)) 
+]);
 ```
 
-### 📡 Fetch (`_fetch`)
-Reactive data fetching with built-in loading and error states.
+### 💾 Native State Persistence
+Stop writing boilerplate for `localStorage`. SigPro handles it at the engine level. If you provide a second argument to a Signal, it becomes persistent.
+
 ```javascript
-const { $data, $loading } = _fetch('https://api.example.com/data');
+// This value survives page refreshes automatically
+const $theme = $('light', 'app-settings-theme'); 
+
+$theme('dark'); // Saved to localStorage instantly and reactively.
 ```
 
-### 💾 Storage (`_storage`)
-Automatic synchronization between Signals and `localStorage`.
-```javascript
-const $theme = _storage($('light'), 'app_theme');
-```
 
-### 🐞 Debug (`_debug`)
-Beautifully formatted console logs for tracking state changes in real-time.
-```javascript
-_debug($mySignal, "User Profile");
-```
 
 ---
 
-## 📂 Project Structure
+## 🎨 Component Anatomy
 
-A typical SigPro project follows this clean convention:
-
-```text
-my-app/
-├── src/
-│   ├── pages/         # Automatic Routes
-│   │   ├── index.js   # -> #/
-│   │   └── about.js   # -> #/about
-│   ├── plugins/       # Custom Plugins
-│   ├── App.js         # Main Layout
-│   └── main.js        # Entry Point
-├── vite.config.js
-└── package.json
-```
-
----
-
-## 🎨 Example Component
-
-SigPro uses standard JavaScript functions and a clean, declarative syntax.
+A SigPro component is just a function. No `this`, no complex hooks, just clean logic.
 
 ```javascript
 export default () => {
-  const $count = $(0); // Create a Signal
+  // 1. State
+  const $count = $(0); 
 
-  return div({ class: 'p-8 text-center' }, [
-    h1("Hello SigPro!"),
-    p(`Current count is: ${$count()}`),
+  // 2. Derived Logic (Computed)
+  const $isEven = $(() => $count() % 2 === 0);
+
+  // 3. UI Template (Declarative)
+  return div({ class: 'counter-card' }, [
+    h2("Counter Example"),
+    p(() => `Current value: ${$count()} (${$isEven() ? 'Even' : 'Odd'})`),
     
-    _button({ 
+    button({ 
       onclick: () => $count(c => c + 1),
-      class: 'btn-primary'
-    }, "Increment")
+      class: 'btn-add'
+    }, "Add +1")
   ]);
 };
 ```
 
 ---
 
+## 📂 Project Structure
+
+```text
+my-app/
+├── src/
+│   ├── pages/         # Files here become routes (e.g., about.js -> #/about)
+│   ├── components/    # Your reusable UI atoms
+│   ├── App.js         # The "Shell" (Navbar, Sidebar, Footer)
+│   └── main.js        # The Glue (Imports $ and mounts App)
+├── vite.config.js
+└── package.json
+```
+
+---
+
+## ⚡ Performance Summary
+
+| Feature | SigPro | Other Frameworks |
+| :--- | :--- | :--- |
+| **Bundle Size** | **~2KB** | 30KB - 100KB+ |
+| **Reactivity** | Atomic Signals | Virtual DOM Diffing |
+| **Routing** | Built-in / File-based | External Plugin Required |
+| **Persistence** | Native | Manual / Plugin Required |
+
+---
+
 ## 📄 License
 
-MIT © 2026 SigPro Team.
+MIT © 2026 SigPro Team. Designed with ❤️ for speed.
+

@@ -8,7 +8,11 @@ export default defineConfig({
   outDir: '../../docs',
   base: isDev ? '/absproxy/5174/sigpro/' : '/sigpro/',
   
-  // CONFIGURACIÓN DE VITE (Motor interno)
+  // AÑADIDO: Head para estilos
+  head: [
+    ['link', { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/daisyui@5/dist/full.css' }]
+  ],
+  
   vite: {
     outDir: '../../docs',
     base: isDev ? '/absproxy/5174/sigpro/' : '/sigpro/',
@@ -24,6 +28,8 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'Api', link: '/api/quick' },
+      // AÑADIDO: UI en nav
+      { text: 'UI', link: '/ui/introduction' },
     ],
     sidebar: [
       {
@@ -40,6 +46,7 @@ export default defineConfig({
           { text: 'Quick Start', link: '/api/quick' },
           { text: '$', link: '/api/$' },
           { text: '$.html', link: '/api/html' },
+          { text: '$.router', link: '/api/router' },
           { text: '$.mount', link: '/api/mount' },
           { text: 'Tags', link: '/api/tags' },
         ]
@@ -48,11 +55,8 @@ export default defineConfig({
         text: 'Plugins',
         items: [
           { text: 'Quick Start', link: '/plugins/quick' },
-          { text: '@core Router Plugin', link: '/plugins/core.router' },
           { text: '@core UI Plugin', link: '/plugins/core.ui' },
-          { text: '@core UI Fetch', link: '/plugins/core.fetch' },
-          { text: '@core UI Storage', link: '/plugins/core.storage' },
-          { text: '@core UI Debug', link: '/plugins/core.debug' },
+          { text: '@core Debug', link: '/plugins/core.debug' },
           { text: 'Custom', link: '/plugins/custom' },
         ]
       },
@@ -60,6 +64,19 @@ export default defineConfig({
         text: 'Vite Router Plugin',
         items: [
           { text: 'Vite Plugin', link: '/vite/plugin' },
+        ]
+      },
+      {
+        text: 'UI Components',
+        items: [
+          { text: 'Introduction', link: '/ui/introduction' },
+          { text: 'Installation', link: '/ui/installation' },
+          { text: 'Button', link: '/ui/button' },
+          { text: 'Input', link: '/ui/input' },
+          { text: 'Form Components', link: '/ui/form' },
+          { text: 'Modal & Drawer', link: '/ui/modal' },
+          { text: 'Navigation', link: '/ui/navigation' },
+          { text: 'Layout', link: '/ui/layout' },
         ]
       }
     ],

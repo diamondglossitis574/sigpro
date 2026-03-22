@@ -1,5 +1,5 @@
 /**
- * SigPro UI 2.0 - daisyUI v5 & Tailwind v4 Plugin
+ * SigPro UI - daisyUI v5 & Tailwind v4 Plugin
  * Provides a set of reactive functional components.
  */
 

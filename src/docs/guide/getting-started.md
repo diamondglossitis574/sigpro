@@ -8,18 +8,18 @@ You can install SigPro via your favorite package manager:
 
 ::: code-group
 ```bash [npm]
-npm install SigPro
+npm install sigpro
 ````
 
 ```bash [pnpm]
-pnpm add SigPro
+pnpm add sigpro
 ```
 
 ```bash [yarn]
-yarn add SigPro
+yarn add sigpro
 ```
 ```bash [bun]
-bun add SigPro
+bun add sigpro
 ```
 :::
 

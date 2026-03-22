@@ -1,14 +1,14 @@
 # Extending SigPro: `$.plugin`
 
-The plugin system is the engine's way of growing. It allows you to inject new functionality directly into the `$` object or load external resources.
+The plugin system is the engine's modular backbone. It allows you to inject new functionality directly into the `$` object, register custom global tags, or load external libraries seamlessly.
 
 ## 1. How Plugins Work
 
-A plugin in **SigPro** is simply a function that receives the core instance. When you run `$.plugin(MyPlugin)`, the engine hands over the `$` object so the plugin can attach new methods or register global tags (like `div()`, `span()`, etc.).
+A plugin in **SigPro** is a function that receives the core instance. When you call `$.plugin(MyPlugin)`, the engine hands over the `$` object so the plugin can attach new methods or extend the reactive system.
 
 ### Functional Plugin Example
 ```javascript
-// A plugin that adds a simple logger to any signal
+// A plugin that adds a simple watcher to any signal
 const Logger = ($) => {
   $.watch = (target, label = "Log") => {
     $(() => console.log(`[${label}]:`, target()));
@@ -23,79 +23,72 @@ $.watch($count, "Counter"); // Now available globally via $
 
 ---
 
-## 2. Initialization Patterns
+## 2. Initialization Patterns (SigPro)
 
-Since plugins often set up global variables (like the HTML tags), the order of initialization is critical. Here are the two ways to start your app:
+Thanks to the **Synchronous Tag Engine**, you no longer need complex `import()` nesting. Global tags like `div()`, `span()`, and `button()` are ready the moment you import the Core.
 
-### Option A: The "Safe" Async Start (Recommended)
-This is the most robust way. It ensures all global tags (`div`, `button`, etc.) are created **before** your App code is even read by the browser.
-
-```javascript
-// main.js
-import { $ } from 'sigpro';
-import { UI, Router } from 'sigpro/plugins';
-
-// 1. Load plugins first
-$.plugin([UI, Router]).then(() => {
-  
-  // 2. Import your app only after the environment is ready
-  import('./App.js').then(appFile => {
-    const MyApp = appFile.default;
-    $.mount(MyApp, '#app');
-  });
-
-});
-```
-
-### Option B: Static Start (No Global Tags)
-Use this only if you prefer **not** to use global tags and want to use `$.html` directly in your components. This allows for standard static imports.
+### The "Natural" Start (Recommended)
+This is the standard way to build apps. It's clean, readable, and supports standard ESM imports.
 
 ```javascript
 // main.js
 import { $ } from 'sigpro';
 import { UI } from 'sigpro/plugins';
-import MyApp from './App.js'; // Static import works here
+import App from './App.js'; // Static import works perfectly!
 
+// 1. Register plugins
 $.plugin(UI);
-$.mount(MyApp, '#app');
+
+// 2. Mount your app directly
+$.mount(App, '#app');
 ```
-> **Warning:** In this mode, if `App.js` uses `div()` instead of `$.html('div')`, it will throw a `ReferenceError`.
 
 ---
 
 ## 3. Resource Plugins (External Scripts)
 
-You can pass a **URL** or an **Array of URLs**. SigPro will inject them as `<script>` tags and return a Promise that resolves when the scripts are fully loaded and executed.
+You can pass a **URL** or an **Array of URLs**. SigPro will inject them as `<script>` tags and return a **Promise** that resolves when the scripts are fully loaded. This is perfect for integrating heavy third-party libraries only when needed.
 
 ```javascript
 // Loading external libraries as plugins
-await $.plugin([
+$.plugin([
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdn.example.com/custom-ui-lib.js'
-]);
-
-console.log("External resources are ready to use!");
+]).then(() => {
+  console.log("External resources are ready to use!");
+  $.mount(DashboardApp);
+});
 ```
 
 ---
 
 ## 4. Polymorphic Loading Reference
 
-The `$.plugin` method adapts to whatever you throw at it:
+The `$.plugin` method is smart; it adapts its behavior based on the input type:
 
 | Input Type | Action | Behavior |
 | :--- | :--- | :--- |
-| **Function** | Executes `fn($)` | Synchronous / Immediate |
-| **String (URL)** | Injects `<script src="...">` | Asynchronous (Returns Promise) |
-| **Array** | Processes each item in the list | Returns Promise if any item is Async |
+| **Function** | Executes `fn($)` | **Synchronous**: Immediate availability. |
+| **String (URL)** | Injects `<script src="...">` | **Asynchronous**: Returns a Promise. |
+| **Array** | Processes each item in the list | Returns a Promise if any item is a URL. |
 
 ---
 
-## 💡 Pro Tip: Why the `.then()`?
+## 💡 Pro Tip: When to use `.then()`?
 
-Using `$.plugin([...]).then(...)` is like giving your app a "Pre-flight Check". It guarantees that:
-1. All reactive methods are attached.
-2. Global HTML tags are defined.
-3. External libraries (like Chart.js) are loaded.
-4. **The result:** Your components are cleaner, smaller, and error-free.
+In **SigPro**, you only need `.then()` in two specific cases:
+1. **External Assets:** When loading a plugin via a URL (CDN).
+2. **Strict Dependency:** If your `App.js` requires a variable that is strictly defined inside an asynchronous external script (like `window.Chart`).
 
+For everything else (UI components, Router, Local State), just call `$.plugin()` and continue with your code. It's that simple.
+
+---
+
+### Summary Cheat Sheet
+
+| Goal | Code |
+| :--- | :--- |
+| **Local Plugin** | `$.plugin(myPlugin)` |
+| **Multiple Plugins** | `$.plugin([UI, Router])` |
+| **External Library** | `$.plugin('https://...').then(...)` |
+| **Hybrid Load** | `$.plugin([UI, 'https://...']).then(...)` |
