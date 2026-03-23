@@ -114,24 +114,3 @@ export const routes = [
 
 Because it uses dynamic `import()`, Vite automatically performs **Code Splitting**, meaning each page is its own small JS file that only loads when the user navigates to it.
 
----
-
-## 6. Installation
-
-::: code-group
-```bash [NPM]
-npm install sigpro
-```
-
-```bash [PNPM]
-pnpm add sigpro
-```
-
-```bash [Yarn]
-yarn add sigpro
-```
-
-```bash [Bun]
-bun add sigpro
-```
-:::

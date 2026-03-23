@@ -4,93 +4,58 @@ layout: home
 hero:
   name: SigPro
   text: Atomic Unified Reactive Engine
-  tagline: Fine-grained reactivity, built-in routing, and modular plugins. All under 2KB.
+  tagline: High-precision atomic reactivity. No Virtual DOM. No compiler. No dependencies.
   image:
     src: /logo.svg
     alt: SigPro Logo
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/getting-started
+      link: /install
     - theme: alt
       text: View on GitHub
       link: https://github.com/natxocc/sigpro
 
 features:
-  - title: Atomic Reactivity
-    details: Powered by Signals. Only updates what changes. No Virtual DOM overhead, no heavy re-renders.
-  - title: Zero Dependencies
-    details: Written in pure Vanilla JS. Maximum performance with the smallest footprint possible.
-  - title: Modular Ecosystem
-    details: Official plugins for UI components, dynamic Routing, Fetch, and Storage. Load only what you need.
+  - title: ⚛️ Atomic Reactivity
+    details: Powered by fine-grained Signals. Forget about whole-component re-renders; SigPro updates only the specific text node or attribute that changed.
+  - title: 🚀 Zero Virtual DOM
+    details: By eliminating the V-DOM diffing layer, SigPro performs surgical, direct manipulations on the real DOM, removing memory and CPU overhead.
+  - title: 🛠️ No Compiler Required
+    details: Pure Vanilla JS. No Babel, no JSX, no complex build steps. Standard JavaScript that runs natively in the browser with maximum performance.
+  - title: 📦 Ultra-Lightweight
+    details: The core engine—including reactivity, DOM creation, persistence, and routing—is under 2KB. Perfect for performance-critical applications.
 ---
 
-## Why SigPro?
+## Redefining Modern Reactivity
 
-SigPro isn't just another framework; it's a high-performance engine. It strips away the complexity of massive bundles and returns to the essence of the web, enhanced with reactive superpowers.
+SigPro is not just another framework; it is a **high-performance engine**. While other libraries add layers of abstraction that slow down execution, SigPro returns to the essence of the web, leveraging the power of modern browser engines.
 
-### The Core in Action
+### Why SigPro?
 
-```javascript
-import { $ } from 'sigpro2';
+#### ⚡️ Surgical DOM Efficiency
+Unlike React or Vue, SigPro doesn't compare element trees. When a signal changes, SigPro knows exactly which DOM node depends on it and updates it instantly. It is **reactive precision** at its finest.
 
-// A reactive state Signal
-const $count = $(0);
+#### 🔌 Modular Plugin System
+The core is sacred. Any extra functionality—Routing, UI Helpers, or State Persistence—is integrated through a polymorphic plugin system. Load only what your application truly needs.
 
-// A Computed signal that updates automatically
-const $double = $(() => $count() * 2);
+#### 💾 Native Persistence
+SigPro features first-class support for `localStorage`. Synchronizing your application state with persistent storage is as simple as providing a key when initializing your Signal.
 
-// UI that breathes with your data
-const Counter = () => div([
-  h1(["Count: ", $count]),
-  p(["Double: ", $double]),
-  button({ onclick: () => $count(c => c + 1) }, "Increment")
-]);
-
-$.mount(Counter);
-```
+#### 🚦 Built-in Hash Routing
+A robust routing system that supports **Native Lazy Loading** out of the box. Load your components only when the user navigates to them, keeping initial load times near zero.
 
 ---
 
-### Key Features
+### The "No-Build" Philosophy
+In an ecosystem obsessed with compilers, SigPro bets on **standardization**. Write code today that will still run 10 years from now, without depending on build tools that will eventually become obsolete.
 
-#### ⚡️ Fine-Grained Reactivity
-Unlike frameworks that diff complex trees (V-DOM), SigPro binds your signals directly to real DOM text nodes and attributes. If the data changes, the node changes. Period.
-
-#### 🔌 Polymorphic Plugin System
-Extend core capabilities in a single line. Add global UI helpers, routing, or state persistence seamlessly.
-```javascript
-import { UI, Router } from 'sigpro/plugins';
-$.plugin([UI, Router]);
-```
-
-#### 📂 File-Based Routing
-With our dedicated Vite plugin, manage your routes simply by creating files in `src/pages/`. It supports native **Lazy Loading** out of the box for lightning-fast initial loads.
+> "The best way to optimize code is to not have to process it at all."
 
 ---
 
-### Quick Install
+## Community & Vision
+SigPro is an open-source project focused on simplicity and extreme speed. Designed for developers who love the web platform and hate unnecessary "bloatware".
 
-::: code-group
-```bash [npm]
-npm install sigpro
-```
-```bash [pnpm]
-pnpm add sigpro
-```
-```bash [yarn]
-yarn add sigpro
-```
-```bash [bun]
-bun add sigpro
-```
-:::
-
----
-
-## Community & Support
-SigPro is an open-source project. Whether you want to contribute, report a bug, or just talk about reactivity, join us on our official repository.
-
-```
-Built with ❤️ by NatxoCC
-```
+```text
+Built with ❤️ by NatxoCC for the Modern Web.

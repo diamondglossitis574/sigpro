@@ -95,29 +95,3 @@ $.plugin(ConfigLoader).then(() => {
 | **Encapsulation** | Use the `$` instance passed as an argument rather than importing it again inside the plugin. |
 | **Reactivity** | Always use `$(...)` for internal state so the app stays reactive. |
 
-
-
----
-
-## 5. Installation
-
-Custom plugins don't require extra packages, but ensure your build tool (Vite/Bun) is configured to handle the module imports.
-
-::: code-group
-```bash [NPM]
-npm install sigpro
-```
-
-```bash [PNPM]
-pnpm add sigpro
-```
-
-```bash [Yarn]
-yarn add sigpro
-```
-
-```bash [Bun]
-bun add sigpro
-```
-:::
-

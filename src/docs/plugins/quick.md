@@ -33,11 +33,11 @@ This is the standard way to build apps. It's clean, readable, and supports stand
 ```javascript
 // main.js
 import { $ } from 'sigpro';
-import { UI } from 'sigpro/plugins';
+import { Fetch } from 'sigpro/plugins';
 import App from './App.js'; // Static import works perfectly!
 
 // 1. Register plugins
-$.plugin(UI);
+$.plugin(Fetch);
 
 // 2. Mount your app directly
 $.mount(App, '#app');

@@ -1,160 +1,128 @@
 # Global Tag Helpers
 
-In **SigPro**, you don't need to write `$.html('div', ...)` every time. To keep your code clean and readable, the engine automatically generates global helper functions for all standard HTML tags.
+In **SigPro**, you don't need to write `$.html('div', ...)` every time. To keep your code clean and readable, the engine automatically generates global helper functions for all standard HTML tags upon initialization.
 
 ## 1. How it Works
 
-When SigPro initializes, it runs a proxy loop that creates a function for every common HTML tag and attaches it to the `window` object. 
+SigPro iterates through an internal manifest of standard HTML tags and attaches a wrapper function for each one directly to the `window` object. This creates a native "DSL" (Domain Specific Language) that looks like a template engine but is **100% standard JavaScript**.
 
-* **Traditional:** `$.html('button', { onclick: ... }, 'Click')`
+* **Under the hood:** `$.html('button', { onclick: ... }, 'Click')`
 * **SigPro Style:** `button({ onclick: ... }, 'Click')`
 
-This approach gives you a "DSL" (Domain Specific Language) that feels like HTML but is actually **pure JavaScript**.
-
 ---
 
-## 2. The Global Registry
+## 2. The Complete Global Registry
 
-The following tags are available globally by default:
+The following tags are injected into the global scope and are ready to use as soon as SigPro loads:
 
-| Category | Available Functions |
+| Category | Available Global Functions |
 | :--- | :--- |
-| **Layout** | `div`, `span`, `section`, `main`, `nav`, `header`, `footer`, `article`, `aside` |
-| **Typography** | `h1`, `h2`, `h3`, `p`, `ul`, `ol`, `li`, `a`, `label`, `strong`, `em` |
-| **Forms** | `form`, `input`, `button`, `select`, `option`, `textarea` |
-| **Table** | `table`, `thead`, `tbody`, `tr`, `th`, `td` |
-| **Media** | `img`, `video`, `audio`, `canvas`, `svg` |
+| **Structure** | `div`, `span`, `p`, `section`, `nav`, `main`, `header`, `footer`, `article`, `aside` |
+| **Typography** | `h1`, `h2`, `h3`, `h4`, `h5`, `h6`, `ul`, `ol`, `li`, `dl`, `dt`, `dd`, `strong`, `em`, `code`, `pre`, `small`, `i`, `b`, `u`, `mark` |
+| **Interactive** | `button`, `a`, `label`, `br`, `hr`, `details`, `summary` |
+| **Forms** | `form`, `input`, `select`, `option`, `textarea`, `fieldset`, `legend` |
+| **Tables** | `table`, `thead`, `tbody`, `tr`, `th`, `td`, `tfoot`, `caption` |
+| **Media & Graphics** | `img`, `canvas`, `video`, `audio`, `svg`, `path`, `iframe` |
+
+> "In SigPro, tags are not 'magic' strings handled by a compiler. They are **functional imitations** of HTML elements. Every time you call `div()`, you are executing a standard JavaScript function that returns a real DOM element. This gives you the speed of a specialized DSL with the transparency of pure JS."
+
+::: danger WARNING: GLOBAL NAMING COLLISIONS
+Since **SigPro** injects these helpers directly into the `window` object, they are regular JavaScript functions. This means **they can be overwritten**.
+
+If you declare a variable, constant, or function with the same name as an HTML tag (e.g., `const div = ...` or `function p()`), you will **nullify or shadow** the built-in SigPro helper for that tag in your current scope.
+
+**Best Practice:** To avoid conflicts, always use **PascalCase** for your custom components (e.g., `UserCard`, `AppHeader`) to distinguish them from the **lowercase** global HTML helpers.
+:::
 
 ---
 
-## 3. Usage Patterns
+## 3. Usage Patterns (Argument Flexibility)
 
-The tag functions are highly flexible and accept arguments in different orders to suit your coding style.
+The tag functions are "smart". They detect whether you are passing attributes, content, or both.
 
 ### A. Attributes + Content
-The most common pattern.
+The standard way to build complex nodes.
 ```javascript
-div({ class: 'card' }, [
-  h1("Title"),
-  p("Description")
+div({ class: 'container', id: 'main-wrapper' }, [
+  h1("Welcome"),
+  p("This is SigPro.")
 ]);
 ```
 
-### B. Content Only
-If you don't need attributes, you can skip the object entirely.
+### B. Content Only (The "Skipper")
+If you don't need attributes, you can pass the content (string, array, or function) as the **first and only** argument.
 ```javascript
-div([
-  h1("Just Content"),
-  p("No attributes object needed here.")
+section([
+  h2("No Attributes Needed"),
+  button("Click Me")
 ]);
 ```
 
-### C. Simple Text
-For elements that only contain a string.
+### C. Primitive Content
+For simple tags, you can just pass a string or a number.
 ```javascript
-button("Submit"); // Equivalent to <button>Submit</button>
+h1("Hello World"); 
+span(42);
 ```
 
 ---
 
-## 4. Reactive Tags
+## 4. Reactive Attributes & Content
 
-Since these helpers are just wrappers around `$.html`, they support full reactivity out of the box.
+These helpers fully support SigPro's reactivity. Attributes starting with `$` are automatically tracked.
 
 ```javascript
-const $loading = $(true);
+const $count = $(0);
 
-div([
-  $loading() ? span("Loading...") : h1("Data Ready!"),
+div({ class: 'counter-app' }, [
+  h2(["Current Count: ", $count]), // Auto-unwrapping text content
+  
   button({ 
-    $disabled: $loading, // Reactive attribute
-    onclick: () => $loading(false) 
-  }, "Stop Loading")
+    onclick: () => $count(c => c + 1),
+    $style: () => $count() > 5 ? "color: red" : "color: green" // Reactive style
+  }, "Increment")
 ]);
 ```
 
 ---
 
-## 5. Under the Hood
+## 5. Technical Implementation
 
-If you are curious about how this happens without a compiler, here is the logic inside the SigPro core:
-
-```javascript
-const tags = ['div', 'span', 'p', 'button', ...];
-
-tags.forEach(tag => {
-  window[tag] = (props, content) => $.html(tag, props, content);
-});
-```
-
-Because these are attached to `window`, they are available in any file in your project as soon as SigPro is loaded, making your components look like this:
+As seen in the SigPro core, the engine registers these tags dynamically. This means **zero imports** are needed for UI creation in your component files.
 
 ```javascript
-// No imports required for tags!
-export default () => 
-  section({ id: 'hero' }, [
-    h1("Fast. Atomic. Simple."),
-    p("Built with SigPro.")
-  ]);
+// Internal SigPro loop
+tags.forEach(t => window[t] = (p, c) => $.html(t, p, c));
 ```
+
+Because they are real functions, you get full IDE autocompletion and valid JS syntax highlighting without needing special plugins like JSX.
 
 ---
 
-## 6. Full Comparison: SigPro vs. Standard HTML
+## 6. Comparison: Logic to UI
 
-To better understand the translation, here is a complete example of a **User Card** component. Notice how **SigPro** attributes with the `$` prefix map to reactive behavior, while standard attributes remain static.
+Here is how a dynamic **Task Item** component translates from SigPro logic to the final DOM structure.
 
 ::: code-group
-```javascript [SigPro (JS)]
-const $online = $(true);
-
-export const UserCard = () => (
-  div({ class: 'user-card' }, [
-    img({ src: 'avatar.png', alt: 'User' }),
-    
-    div({ class: 'info' }, [
-      h2("John Doe"),
-      p({ 
-        $class: () => $online() ? 'status-on' : 'status-off' 
-      }, [
-        "Status: ", 
-        () => $online() ? "Online" : "Offline"
-      ])
-    ]),
-    
-    button({ 
-      onclick: () => $online(!$online()) 
-    }, "Toggle Status")
+```javascript [SigPro Component]
+const Task = (title, $done) => (
+  li({ class: 'task-item' }, [
+    input({ 
+      type: 'checkbox', 
+      $checked: $done // Two-way reactive binding
+    }),
+    span({ 
+      $style: () => $done() ? "text-decoration: line-through" : "" 
+    }, title)
   ])
 );
 ```
 
-```html [Equivalent HTML Structure]
-<div class="user-card">
-  <img src="avatar.png" alt="User">
-  
-  <div class="info">
-    <h2>John Doe</h2>
-    <p class="status-on">
-      Status: Online
-    </p>
-  </div>
-  
-  <button>Toggle Status</button>
-</div>
+```html [Rendered HTML]
+<li class="task-item">
+  <input type="checkbox" checked>
+  <style="text-decoration: line-through">Buy milk</span>
+</li>
 ```
 :::
 
-### What is happening here?
-
-1.  **Structure:** The hierarchy is identical. `div([...])` in JS translates directly to nested tags in HTML.
-2.  **Attributes:** `class` is set once. `$class` is "live"; SigPro listens to the `$online` signal and updates the class name without re-rendering the whole card.
-3.  **Content:** The array `[...]` in SigPro is the equivalent of the children inside an HTML tag.
-4.  **Reactivity:** The function `() => $online() ? ...` creates a **TextNode** in the HTML that changes its text content surgically whenever the signal toggles.
-
----
-
-## 💡 Best Practices
-
-1. **Destructuring:** If you prefer not to rely on global variables, you can destructure them from `window` or `$` (though in SigPro, using them globally is the intended "clean" way).
-2. **Custom Tags:** If you need a tag that isn't in the default list (like a Web Component), you can still use the base engine: `$.html('my-custom-element', { ... })`.

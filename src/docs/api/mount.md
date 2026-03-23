@@ -1,4 +1,4 @@
-# Application Mounter: `$.router.mount` (Core)
+# Application Mounter: `$.mount`
 
 The `$.mount` function is the entry point of your reactive world. It takes a **SigPro component** (or a plain DOM node) and injects it into the real document, bridging the gap between your logic and the browser.
 

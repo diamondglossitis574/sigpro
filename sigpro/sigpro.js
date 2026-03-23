@@ -9,14 +9,22 @@
   /** @type {Function|null} Internal tracker for the currently executing reactive effect. */
   let activeEffect = null;
 
-  /**
-   * Creates a reactive Signal or Computed value
-   * @param {any|Function} initial - Initial value or computed function
+/**
+   * Creates a reactive Signal, Computed value, or Store (Object of signals)
+   * @param {any|Function|Object} initial - Initial value, computed function, or state object
    * @param {string} [key] - Optional localStorage key for persistence
-   * @returns {Function} Reactive accessor/mutator function
+   * @returns {Function|Object} Reactive accessor/mutator or Store object
    */
   const $ = (initial, key) => {
     const subs = new Set();
+
+    if (typeof initial === 'object' && initial !== null && !Array.isArray(initial) && typeof initial !== 'function' && !(initial instanceof Node)) {
+      const store = {};
+      for (let k in initial) {
+        store[k] = $(initial[k], key ? `${key}_${k}` : null);
+      }
+      return store;
+    }
 
     if (typeof initial === 'function') {
       let cached;
