@@ -1,5 +1,5 @@
 /**
- * SigPro v2.0
+ * SigPro
  */
 (() => {
   let activeEffect = null;
@@ -7,7 +7,6 @@
   let isFlushScheduled = false;
   let flushCount = 0;
 
-  // --- Motor de Batching con Protección (v1 + v2) ---
   const flushQueue = () => {
     isFlushScheduled = false;
     flushCount++;
@@ -21,7 +20,6 @@
     effectQueue.clear();
     effects.forEach(fn => fn());
 
-    // Resetear contador al final del microtask
     queueMicrotask(() => flushCount = 0);
   };
 
@@ -36,29 +34,26 @@
   const $ = (initial, key) => {
     const subs = new Set();
 
-    // 1. Objetos Reactivos (v2)
     if (initial?.constructor === Object && !key) {
       const store = {};
       for (let k in initial) store[k] = $(initial[k]);
       return store;
     }
 
-    // 2. Efectos y Computados con Limpieza (v1 + v2)
     if (typeof initial === 'function') {
       let cached, running = false;
       const cleanups = new Set();
 
       const runner = () => {
-        if (runner.el && !runner.el.isConnected) return; // GC: v2
+        if (runner.el && !runner.el.isConnected) return;
         if (running) return;
 
-        // Ejecutar limpiezas previas (v1)
         cleanups.forEach(fn => fn());
         cleanups.clear();
 
         const prev = activeEffect;
         activeEffect = runner;
-        activeEffect.onCleanup = (fn) => cleanups.add(fn); // Registro de limpieza
+        activeEffect.onCleanup = (fn) => cleanups.add(fn);
 
         running = true;
         try {
@@ -79,13 +74,11 @@
       };
     }
 
-    // 3. Persistencia (v2)
     if (key) {
       const saved = localStorage.getItem(key);
       if (saved !== null) try { initial = JSON.parse(saved); } catch (e) { }
     }
 
-    // 4. Señal Atómica
     return (...args) => {
       if (args.length) {
         const next = typeof args[0] === 'function' ? args[0](initial) : args[0];
@@ -103,7 +96,6 @@
     };
   };
 
-  // --- Motor de Renderizado con Modificadores de v1 ---
   $.html = (tag, props = {}, content = []) => {
     const el = document.createElement(tag);
     if (props instanceof Node || Array.isArray(props) || typeof props !== 'object') {
@@ -179,12 +171,9 @@
   const tags = ['div', 'span', 'p', 'h1', 'h2', 'ul', 'li', 'button', 'input', 'label', 'form', 'section', 'a', 'img'];
   tags.forEach(t => window[t] = (p, c) => $.html(t, p, c));
 
-  // --- Router mejorado ---
   $.router = (routes) => {
-    // Señal persistente del path actual
     const sPath = $(window.location.hash.replace(/^#/, "") || "/");
 
-    // Listener nativo
     window.addEventListener("hashchange", () => sPath(window.location.hash.replace(/^#/, "") || "/"));
 
     const container = div({ class: "router-outlet" });
@@ -193,7 +182,6 @@
       const cur = sPath();
       const cP = cur.split('/').filter(Boolean);
 
-      // Buscamos la ruta (incluyendo parámetros :id y wildcard *)
       const route = routes.find(r => {
         const rP = r.path.split('/').filter(Boolean);
         return rP.length === cP.length && rP.every((p, i) => p.startsWith(':') || p === cP[i]);
@@ -201,7 +189,6 @@
 
       if (!route) return container.replaceChildren(h1("404 - Not Found"));
 
-      // Extraer parámetros dinámicos
       const params = {};
       route.path.split('/').filter(Boolean).forEach((p, i) => {
         if (p.startsWith(':')) params[p.slice(1)] = cP[i];
@@ -209,7 +196,6 @@
 
       const res = typeof route.component === 'function' ? route.component(params) : route.component;
 
-      // Renderizado Seguro con replaceChildren (v1 spirit)
       if (res instanceof Promise) {
         const loader = span("Cargando...");
         container.replaceChildren(loader);
@@ -219,13 +205,12 @@
       }
     };
 
-    routeEff.el = container; // Seguridad de SigPro v2
+    routeEff.el = container;
     $(routeEff);
 
     return container;
   };
 
-  // Vinculamos el método .go
   $.router.go = (path) => {
     const target = path.startsWith('/') ? path : `/${path}`;
     window.location.hash = target;
@@ -238,3 +223,4 @@
 
   window.$ = $;
 })();
+export const { $ } = window;
