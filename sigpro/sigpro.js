@@ -1,43 +1,76 @@
 /**
- * SigPro - Atomic Unified Reactive Engine
- * A lightweight, fine-grained reactivity system with built-in routing and plugin support.
- * @author NatxoCC
- * 
- * Type definitions available in sigpro.d.ts
+ * SigPro v2.0
  */
 (() => {
-  /** @type {Function|null} Internal tracker for the currently executing reactive effect. */
   let activeEffect = null;
+  const effectQueue = new Set();
+  let isFlushScheduled = false;
+  let flushCount = 0;
 
-/**
-   * Creates a reactive Signal, Computed value, or Store (Object of signals)
-   * @param {any|Function|Object} initial - Initial value, computed function, or state object
-   * @param {string} [key] - Optional localStorage key for persistence
-   * @returns {Function|Object} Reactive accessor/mutator or Store object
-   */
+  // --- Motor de Batching con Protección (v1 + v2) ---
+  const flushQueue = () => {
+    isFlushScheduled = false;
+    flushCount++;
+
+    if (flushCount > 100) {
+      effectQueue.clear();
+      throw new Error("SigPro: Bucle infinito detectado");
+    }
+
+    const effects = Array.from(effectQueue);
+    effectQueue.clear();
+    effects.forEach(fn => fn());
+
+    // Resetear contador al final del microtask
+    queueMicrotask(() => flushCount = 0);
+  };
+
+  const scheduleFlush = (s) => {
+    effectQueue.add(s);
+    if (!isFlushScheduled) {
+      isFlushScheduled = true;
+      queueMicrotask(flushQueue);
+    }
+  };
+
   const $ = (initial, key) => {
     const subs = new Set();
 
-    if (typeof initial === 'object' && initial !== null && !Array.isArray(initial) && typeof initial !== 'function' && !(initial instanceof Node)) {
+    // 1. Objetos Reactivos (v2)
+    if (initial?.constructor === Object && !key) {
       const store = {};
-      for (let k in initial) {
-        store[k] = $(initial[k], key ? `${key}_${k}` : null);
-      }
+      for (let k in initial) store[k] = $(initial[k]);
       return store;
     }
 
+    // 2. Efectos y Computados con Limpieza (v1 + v2)
     if (typeof initial === 'function') {
-      let cached;
+      let cached, running = false;
+      const cleanups = new Set();
+
       const runner = () => {
+        if (runner.el && !runner.el.isConnected) return; // GC: v2
+        if (running) return;
+
+        // Ejecutar limpiezas previas (v1)
+        cleanups.forEach(fn => fn());
+        cleanups.clear();
+
         const prev = activeEffect;
         activeEffect = runner;
+        activeEffect.onCleanup = (fn) => cleanups.add(fn); // Registro de limpieza
+
+        running = true;
         try {
           const next = initial();
           if (!Object.is(cached, next)) {
             cached = next;
-            subs.forEach(s => s());
+            subs.forEach(scheduleFlush);
           }
-        } finally { activeEffect = prev; }
+        } finally {
+          activeEffect = prev;
+          running = false;
+        }
       };
       runner();
       return () => {
@@ -46,180 +79,162 @@
       };
     }
 
+    // 3. Persistencia (v2)
     if (key) {
       const saved = localStorage.getItem(key);
-      if (saved !== null) {
-        try { initial = JSON.parse(saved); } catch (e) { }
-      }
+      if (saved !== null) try { initial = JSON.parse(saved); } catch (e) { }
     }
 
+    // 4. Señal Atómica
     return (...args) => {
       if (args.length) {
         const next = typeof args[0] === 'function' ? args[0](initial) : args[0];
         if (!Object.is(initial, next)) {
           initial = next;
           if (key) localStorage.setItem(key, JSON.stringify(initial));
-          subs.forEach(s => s());
+          subs.forEach(scheduleFlush);
         }
       }
-      if (activeEffect) subs.add(activeEffect);
+      if (activeEffect) {
+        subs.add(activeEffect);
+        if (activeEffect.onCleanup) activeEffect.onCleanup(() => subs.delete(activeEffect));
+      }
       return initial;
     };
   };
 
-  /**
-   * Creates reactive HTML elements
-   * @param {string} tag - HTML tag name
-   * @param {Object} [props] - Attributes and event handlers
-   * @param {any} [content] - Child content
-   * @returns {HTMLElement}
-   */
+  // --- Motor de Renderizado con Modificadores de v1 ---
   $.html = (tag, props = {}, content = []) => {
     const el = document.createElement(tag);
-    if (typeof props !== 'object' || props instanceof Node || Array.isArray(props) || typeof props === 'function') {
-      content = props;
-      props = {};
+    if (props instanceof Node || Array.isArray(props) || typeof props !== 'object') {
+      content = props; props = {};
     }
 
     for (let [key, val] of Object.entries(props)) {
       if (key.startsWith('on')) {
-        el.addEventListener(key.toLowerCase().slice(2), val);
-      } else if (key.startsWith('$')) {
+        const [rawName, ...mods] = key.toLowerCase().slice(2).split('.');
+        const handler = (e) => {
+          if (mods.includes('prevent')) e.preventDefault();
+          if (mods.includes('stop')) e.stopPropagation();
+
+          if (mods.some(m => m.startsWith('debounce'))) {
+            const ms = mods.find(m => m.startsWith('debounce')).split(':')[1] || 300;
+            clearTimeout(val._timer);
+            val._timer = setTimeout(() => val(e), ms);
+          } else {
+            val(e);
+          }
+        };
+        el.addEventListener(rawName, handler, { once: mods.includes('once') });
+      }
+      else if (key.startsWith('$')) {
         const attr = key.slice(1);
-        if ((attr === 'value' || attr === 'checked') && typeof val === 'function') {
-          const ev = attr === 'checked' ? 'change' : 'input';
-          el.addEventListener(ev, e => val(attr === 'checked' ? e.target.checked : e.target.value));
-        }
-        $(() => {
+        const attrEff = () => {
           const v = typeof val === 'function' ? val() : val;
           if (attr === 'value' || attr === 'checked') el[attr] = v;
           else if (typeof v === 'boolean') el.toggleAttribute(attr, v);
-          else el.setAttribute(attr, v ?? '');
-        });
+          else if (v == null) el.removeAttribute(attr);
+          else el.setAttribute(attr, v);
+        };
+        attrEff.el = el; $(attrEff);
+
+        if ((attr === 'value' || attr === 'checked') && typeof val === 'function') {
+          el.addEventListener(attr === 'checked' ? 'change' : 'input', e =>
+            val(attr === 'checked' ? e.target.checked : e.target.value)
+          );
+        }
       } else el.setAttribute(key, val);
     }
 
     const append = (c) => {
       if (Array.isArray(c)) return c.forEach(append);
       if (typeof c === 'function') {
-        const node = document.createTextNode('');
-        $(() => {
+        let nodes = [document.createTextNode('')];
+        const contentEff = () => {
           const res = c();
-          if (res instanceof Node) {
-            if (node.parentNode) node.replaceWith(res);
-          } else {
-            node.textContent = res ?? '';
+          const nextNodes = (Array.isArray(res) ? res : [res]).map(i =>
+            i instanceof Node ? i : document.createTextNode(i ?? '')
+          );
+          if (nextNodes.length === 0) nextNodes.push(document.createTextNode(''));
+
+          if (nodes[0].parentNode) {
+            const parent = nodes[0].parentNode;
+            nextNodes.forEach(n => parent.insertBefore(n, nodes[0]));
+            nodes.forEach(n => n.remove());
+            nodes = nextNodes;
           }
-        });
-        return el.appendChild(node);
+        };
+        contentEff.el = nodes[0];
+        nodes.forEach(n => el.appendChild(n));
+        $(contentEff);
+        return;
       }
       el.appendChild(c instanceof Node ? c : document.createTextNode(c ?? ''));
     };
+
     append(content);
     return el;
   };
 
-  const tags = [
-    'div', 'span', 'p', 'section', 'nav', 'main', 'header', 'footer', 'article', 'aside',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-    'button', 'a', 'label', 'strong', 'em', 'code', 'pre', 'br', 'hr', 'small', 'i', 'b', 'u', 'mark',
-    'input', 'form', 'select', 'option', 'textarea', 'fieldset', 'legend', 'details', 'summary',
-    'table', 'thead', 'tbody', 'tr', 'th', 'td', 'tfoot', 'caption',
-    'img', 'canvas', 'video', 'audio', 'svg', 'path', 'iframe'
-  ];
-
+  const tags = ['div', 'span', 'p', 'h1', 'h2', 'ul', 'li', 'button', 'input', 'label', 'form', 'section', 'a', 'img'];
   tags.forEach(t => window[t] = (p, c) => $.html(t, p, c));
 
-  /**
-   * Mounts a component to the DOM
-   * @param {HTMLElement|Function} node - Component or element to mount
-   * @param {HTMLElement|string} [target=document.body] - Target element or selector
-   */
-  $.mount = (node, target = document.body) => {
-    const el = typeof target === 'string' ? document.querySelector(target) : target;
-    if (el) {
-      el.innerHTML = '';
-      el.appendChild(typeof node === 'function' ? node() : node);
-    }
-  };
-
-  /**
-   * Initializes a hash-based router
-   * @param {Array<{path: string, component: Function|Promise|HTMLElement}>} routes
-   * @returns {HTMLElement}
-   */
+  // --- Router mejorado ---
   $.router = (routes) => {
+    // Señal persistente del path actual
     const sPath = $(window.location.hash.replace(/^#/, "") || "/");
+
+    // Listener nativo
     window.addEventListener("hashchange", () => sPath(window.location.hash.replace(/^#/, "") || "/"));
 
-    return $.html('div', [
-      () => {
-        const current = sPath();
-        const cP = current.split('/').filter(Boolean);
+    const container = div({ class: "router-outlet" });
 
-        const route = routes.find(r => {
-          const rP = r.path.split('/').filter(Boolean);
-          if (rP.length !== cP.length) return false;
-          return rP.every((part, i) => part.startsWith(':') || part === cP[i]);
-        }) || routes.find(r => r.path === "*");
+    const routeEff = () => {
+      const cur = sPath();
+      const cP = cur.split('/').filter(Boolean);
 
-        if (!route) return $.html('h1', "404 - Not Found");
+      // Buscamos la ruta (incluyendo parámetros :id y wildcard *)
+      const route = routes.find(r => {
+        const rP = r.path.split('/').filter(Boolean);
+        return rP.length === cP.length && rP.every((p, i) => p.startsWith(':') || p === cP[i]);
+      }) || routes.find(r => r.path === "*");
 
-        const rP = route.path.split('/').filter(Boolean);
-        const params = {};
-        rP.forEach((part, i) => {
-          if (part.startsWith(':')) params[part.slice(1)] = cP[i];
-        });
+      if (!route) return container.replaceChildren(h1("404 - Not Found"));
 
-        const result = typeof route.component === 'function' ? route.component(params) : route.component;
+      // Extraer parámetros dinámicos
+      const params = {};
+      route.path.split('/').filter(Boolean).forEach((p, i) => {
+        if (p.startsWith(':')) params[p.slice(1)] = cP[i];
+      });
 
-        if (result instanceof Promise) {
-          const $lazyNode = $($.html('span', "Loading..."));
-          result.then(m => {
-            const content = m.default || m;
-            const finalView = typeof content === 'function' ? content(params) : content;
-            $lazyNode(finalView);
-          });
-          return () => $lazyNode();
-        }
+      const res = typeof route.component === 'function' ? route.component(params) : route.component;
 
-        return result instanceof Node ? result : $.html('span', String(result));
+      // Renderizado Seguro con replaceChildren (v1 spirit)
+      if (res instanceof Promise) {
+        const loader = span("Cargando...");
+        container.replaceChildren(loader);
+        res.then(c => container.replaceChildren(c instanceof Node ? c : document.createTextNode(c)));
+      } else {
+        container.replaceChildren(res instanceof Node ? res : document.createTextNode(res));
       }
-    ]);
+    };
+
+    routeEff.el = container; // Seguridad de SigPro v2
+    $(routeEff);
+
+    return container;
   };
 
-  /**
-   * Programmatic navigation
-   * @param {string} path - Destination path
-   */
+  // Vinculamos el método .go
   $.router.go = (path) => {
-    window.location.hash = path.startsWith('/') ? path : `/${path}`;
+    const target = path.startsWith('/') ? path : `/${path}`;
+    window.location.hash = target;
   };
 
-  /**
-   * Plugin system - extends SigPro or loads external scripts
-   * @param {Function|string|string[]} source - Plugin or script URL(s)
-   * @returns {Promise<SigPro>|SigPro}
-   */
-  $.plugin = (source) => {
-    if (typeof source === 'function') {
-      source($);
-      return $;
-    }
-    const urls = Array.isArray(source) ? source : [source];
-    return Promise.all(urls.map(url => new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = url;
-      script.async = true;
-      script.onload = () => {
-        console.log(`%c[SigPro] Plugin Loaded: ${url}`, "color: #51cf66; font-weight: bold;");
-        resolve();
-      };
-      script.onerror = () => reject(new Error(`[SigPro] Failed to load: ${url}`));
-      document.head.appendChild(script);
-    }))).then(() => $);
+  $.mount = (node, target = 'body') => {
+    const el = typeof target === 'string' ? document.querySelector(target) : target;
+    if (el) { el.innerHTML = ''; el.appendChild(typeof node === 'function' ? node() : node); }
   };
 
   window.$ = $;
 })();
-export const { $ } = window;
