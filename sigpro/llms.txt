@@ -1,0 +1,355 @@
+```txt
+# SigPro Core – Complete Reference for AI
+
+SigPro is a reactive UI library built on signals, with no virtual DOM and no compiler. It provides fine-grained reactivity, automatic cleanup, and direct DOM manipulation. This document describes the core API as exposed by the `$` global.
+
+---
+
+## The `$` Function
+
+The `$` function creates **signals**, **computed values**, **effects**, and **persistent state**. Its behavior depends on the argument type.
+
+### 1. Primitive Signal
+
+```js
+const count = $(0);       // create with initial value
+count();                  // read → 0
+count(5);                 // write → 5
+count(v => v + 1);        // update (increment)
+```
+
+### 2. Reactive Object (Proxy)
+
+If the argument is a plain object or array, a reactive proxy is returned. All properties become reactive, including nested objects.
+
+```js
+const user = $({ name: 'Juan', age: 30 });
+user().name;              // read property → 'Juan'
+user.name = 'Carlos';     // write property → triggers updates
+user.age = 31;            // also reactive
+```
+
+Nested objects are automatically wrapped in proxies when accessed.
+
+### 3. Computed Signal
+
+If the argument is a **function**, it creates a computed signal. The function is executed lazily and caches its result. Dependencies are automatically tracked.
+
+```js
+const count = $(0);
+const double = $(() => count() * 2);
+double();                 // → 0
+count(5);
+double();                 // → 10 (automatically updated)
+```
+
+Computed signals are read‑only.
+
+### 4. Effect
+
+If you call `$` with a function **inside a component or runtime**, it becomes an effect that runs immediately and re‑runs whenever any of its dependencies change. The effect can return a cleanup function.
+
+```js
+$(() => {
+  console.log('Count changed:', count());
+});
+
+$(() => {
+  const timer = setInterval(() => console.log('tick'), 1000);
+  return () => clearInterval(timer);   // cleanup on each re‑run or unmount
+});
+```
+
+Effects are automatically stopped when the component is unmounted (see `$.mount`).
+
+### 5. Persistent Signal
+
+If you pass a second argument (a string key), the signal is synchronized with `localStorage`. The initial value is loaded from storage, and every write is saved.
+
+```js
+const theme = $('light', 'theme-key');
+const settings = $({ volume: 50 }, 'app-settings');
+```
+
+---
+
+## DOM Creation
+
+### `$.html(tag, props, children)`
+
+Creates a DOM element with the given tag, properties, and children.
+
+```js
+const el = $.html('div', { class: 'container' }, 'Hello');
+```
+
+If the second argument is not an object, it is treated as children:
+
+```js
+$.html('div', 'Hello');                 // no props
+$.html('div', [h1('Title'), p('Text')]); // children array
+```
+
+### Tag Shortcuts
+
+Common tags are directly available as functions:
+
+```js
+div(props, children)
+span(props, children)
+p()
+h1(), h2(), h3()
+ul(), li()
+button()
+input()
+label()
+form()
+section()
+a()
+img()
+nav()
+hr()
+```
+
+All tag functions call `$.html` internally.
+
+---
+
+## Props
+
+Props are objects passed to `$.html` or tag functions.
+
+### Static Attributes
+
+Standard HTML attributes are set as strings or booleans.
+
+```js
+div({ class: 'btn', id: 'submit', disabled: true }, 'Click');
+```
+
+### Reactive Attributes (prefixed with `$`)
+
+Attributes starting with `$` are reactive. Their value can be a static value, a signal, or a function returning a value. The attribute is updated automatically when the value changes.
+
+```js
+const isActive = $(false);
+div({ $class: () => isActive() ? 'active' : 'inactive' });
+```
+
+Special reactive attributes:
+- `$value` – two‑way binding for `<input>`, `<textarea>`, etc.
+- `$checked` – two‑way binding for checkboxes/radios.
+
+When `$value` or `$checked` is a function (signal), the element’s `value`/`checked` property is updated, and the element’s `input`/`change` event will update the signal.
+
+```js
+const name = $('');
+input({ $value: name });   // auto‑updates name when user types
+```
+
+### Event Handlers (prefixed with `on`)
+
+Events are attached with `onEventName`. The event name is case‑insensitive and can be followed by modifiers separated by dots.
+
+```js
+button({ onclick: () => console.log('clicked') }, 'Click');
+```
+
+Modifiers:
+- `.prevent` – calls `e.preventDefault()`
+- `.stop` – calls `e.stopPropagation()`
+- `.once` – removes listener after first call
+
+Example:
+
+```js
+button({ onClick.prevent: handleSubmit }, 'Submit');
+div({ onClick.stop: handleDivClick }, 'Click');
+```
+
+---
+
+## Children
+
+Children can be:
+
+- **String** – inserted as text node.
+- **DOM Node** – inserted directly.
+- **Array** – each item is processed recursively.
+- **Function** – treated as reactive content. The function is called every time its dependencies change, and the result is rendered in place.
+
+```js
+const count = $(0);
+div([
+  'Static text',
+  () => `Count: ${count()}`,   // updates automatically
+  button({ onclick: () => count(count()+1) }, '+')
+]);
+```
+
+When a function child returns an array, each element is inserted.
+
+---
+
+## Routing
+
+### `$.router(routes)`
+
+Creates a router outlet that displays the component matching the current hash (`#/`). Returns a DOM element (a `div` with class `router-outlet`) that can be inserted anywhere.
+
+`routes` is an array of objects with `path` and `component` properties.
+
+- `path`: string like `/`, `/users`, `/users/:id`. Dynamic parameters are prefixed with `:`.
+- `component`: a function that receives an object of params and returns a DOM node / runtime.
+
+A `*` path serves as a 404 catch‑all.
+
+```js
+const routes = [
+  { path: '/', component: () => Home() },
+  { path: '/users/:id', component: (params) => UserDetail(params.id) },
+  { path: '*', component: () => NotFound() }
+];
+
+const outlet = $.router(routes);
+document.body.appendChild(outlet);
+```
+
+### `$.router.go(path)`
+
+Programmatically navigates to a new hash path.
+
+```js
+$.router.go('/users/123');
+```
+
+---
+
+## Mounting
+
+### `$.mount(component, target)`
+
+Mounts a component into a DOM element. The component can be a function (called to produce a runtime) or a static DOM node.
+
+- `target`: a CSS selector string or a DOM element.
+- Returns the runtime instance (with a `destroy` method).
+
+If the target already has a mounted SigPro instance, it is automatically destroyed before the new one is mounted.
+
+```js
+$.mount(() => div('Hello'), '#app');
+```
+
+### Component Functions
+
+A component function receives an object with `onCleanup` which can be used to register cleanup callbacks.
+
+```js
+const MyComponent = ({ onCleanup }) => {
+  const timer = setInterval(() => {}, 1000);
+  onCleanup(() => clearInterval(timer));
+  return div('Component');
+};
+```
+
+Components can return:
+- a DOM node
+- an array of nodes
+- a runtime object (like one returned from another `$.mount` call, but typically you return a node)
+
+---
+
+## Memory Management
+
+SigPro automatically cleans up resources to prevent leaks:
+
+- **WeakMaps** for proxies and mounted nodes allow garbage collection.
+- Every effect, event listener, or reactive attribute created through SigPro is stored in `_cleanups` on the element and removed when the element is swept.
+- The `sweep` function recursively cleans all child nodes and their attached effects.
+- When a component is unmounted (by calling `destroy()` or via router), all its effects and event listeners are removed.
+
+Effects that return a cleanup function have that function called before the next run and on unmount.
+
+---
+
+## Examples
+
+### Counter with localStorage persistence
+
+```js
+const Counter = () => {
+  const count = $(0, 'counter');   // persistent signal
+  return div([
+    span(() => `Count: ${count()}`),
+    button({ onclick: () => count(count() + 1) }, '+'),
+    button({ onclick: () => count(count() - 1) }, '-')
+  ]);
+};
+
+$.mount(Counter, '#app');
+```
+
+### Form with two‑way binding
+
+```js
+const Form = () => {
+  const name = $('');
+  const email = $('');
+  return form({ onsubmit: (e) => e.preventDefault() }, [
+    label('Name:'),
+    input({ $value: name, placeholder: 'Your name' }),
+    label('Email:'),
+    input({ $value: email, type: 'email' }),
+    p(() => `Hello, ${name() || 'stranger'}`)
+  ]);
+};
+```
+
+### Router with parameters
+
+```js
+const routes = [
+  { path: '/', component: () => div('Home') },
+  { path: '/user/:id', component: (p) => div(`User ${p.id}`) }
+];
+
+const App = () => div([
+  nav([
+    a({ href: '#/' }, 'Home'),
+    a({ href: '#/user/42' }, 'User 42')
+  ]),
+  $.router(routes)
+]);
+
+$.mount(App, '#app');
+```
+
+### Effect with cleanup
+
+```js
+const Clock = () => {
+  const time = $(new Date().toLocaleTimeString());
+  $(() => {
+    const interval = setInterval(() => {
+      time(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(interval);
+  });
+  return span(() => time());
+};
+```
+
+---
+
+## Notes for AI
+
+- SigPro is entirely self‑contained. No external libraries are needed.
+- All reactivity is based on signals and proxies.
+- To update the DOM, just change a signal – the UI updates automatically.
+- Use `$` for state, `$.html` (or tag shortcuts) for DOM.
+- The router uses hash navigation only; it does not use the History API.
+- There is no built‑in `_if` or `_for`; those are part of optional UI plugins. For conditional rendering, use a function child that returns different content based on a signal.
+- For lists, a common pattern is to create a function child that maps over an array and returns an array of elements. However, the core does not provide keyed diffing; that is left to the user or plugin.
+
+For any further details, refer to the source code of `$.html`, `$.router`, and the reactive internals. The API is stable and minimal.
+```
