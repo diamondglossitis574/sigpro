@@ -40,7 +40,10 @@ export default defineConfig({
         text: 'API Reference',
         items: [
           { text: 'Quick Start', link: '/api/quick' },
-          { text: '$', link: '/api/$' },
+          { text: '$', link: '/api/signal' },
+          { text: '$.effect', link: '/api/effect' },
+          { text: '$.ignore', link: '/api/ignore' },
+          { text: '$.view', link: '/api/view' },
           { text: '$.html', link: '/api/html' },
           { text: '$.router', link: '/api/router' },
           { text: '$.mount', link: '/api/mount' },
@@ -48,18 +51,11 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Plugins',
+        text: 'UI Components',
         items: [
-          { text: 'Quick Start', link: '/plugins/quick' },
-          { text: 'Custom', link: '/plugins/custom' },
+          { text: 'Quick Start', link: '/ui/quick' }
         ]
       },
-      {
-        text: 'Examples',
-        items: [
-          { text: 'Demo Core', link: '/examples' }
-        ]
-      }
     ],
     socialLinks: [
       { icon: 'github', link: 'https://github.com/natxocc/sigpro' }

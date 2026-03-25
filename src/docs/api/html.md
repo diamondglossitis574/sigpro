@@ -1,103 +1,93 @@
-# Rendering Engine: `$.html`
+# 🏗️ The DOM Factory: `$.html( )`
 
-The `$.html` function is the architect of your UI. It creates standard HTML elements and wires them directly to your signals without the need for a Virtual DOM.
+`$.html` is the internal engine that creates, attributes, and attaches reactivity to DOM elements. It is the foundation for all Tag Constructors in SigPro.
 
-## 1. Syntax: `$.html(tag, [props], [content])`
+## 🛠 Function Signature
+
+```typescript
+$.html(tagName: string, props?: Object, children?: any[] | any): HTMLElement
+```
 
 | Parameter | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| **tag** | `string` | **Yes** | Any valid HTML5 tag (e.g., `'div'`, `'button'`, `'input'`). |
-| **props** | `Object` | No | Attributes, event listeners, and reactive bindings. |
-| **content** | `any` | No | Text, Nodes, Arrays, or Reactive Functions. |
-
-### Example:
-```javascript
-const myButton = $.html('button', { class: 'btn-primary' }, 'Click me');
-```
+| **`tagName`** | `string` | Yes | Valid HTML tag name (e.g., `"div"`, `"button"`). |
+| **`props`** | `Object` | No | HTML attributes, event listeners, and reactive bindings. |
+| **`children`** | `any` | No | Nested elements, text strings, or reactive functions. |
 
 ---
 
-## 2. Global Tag Helpers
+## 📖 Key Features
 
-To avoid repetitive `$.html` calls, SigPro automatically exposes common tags to the global `window` object. This allows for a clean, declarative syntax.
+### 1. Attribute Handling
+SigPro intelligently decides how to apply each property:
+* **Standard Props**: Applied via `setAttribute` or direct property assignment.
+* **Boolean Props**: Uses `toggleAttribute` (e.g., `checked`, `disabled`, `hidden`).
+* **Class Names**: Supports `class` or `className` interchangeably.
+
+### 2. Event Listeners & Modifiers
+Events are defined by the `on` prefix. SigPro supports **Dot Notation** for common event operations:
 
 ```javascript
-// Instead of $.html('div', ...), just use:
-div({ id: 'wrapper' }, [
-  h1("Welcome"),
-  p("This is SigPro.")
+$.html("button", {
+  // e.preventDefault() is called automatically
+  "onsubmit.prevent": (e) => save(e), 
+  
+  // e.stopPropagation() is called automatically
+  "onclick.stop": () => console.log("No bubbling"),
+  
+  // { once: true } listener option
+  "onclick.once": () => console.log("Runs only once")
+}, "Click Me");
+```
+
+### 3. Reactive Attributes
+If an attribute value is a **function** (like a Signal), `$.html` creates an internal `$.effect` to keep the DOM in sync with the state.
+
+```javascript
+$.html("div", {
+  // Updates the class whenever 'theme()' changes
+  class: () => theme() === "dark" ? "bg-black" : "bg-white"
+});
+```
+
+### 4. Reactive Children
+Children can be static or dynamic. When a child is a function, SigPro creates a reactive boundary for that specific part of the DOM.
+
+```javascript
+$.html("div", {}, [
+  H1("Static Title"),
+  // Only this text node re-renders when 'count' changes
+  () => `Current count: ${count()}`
 ]);
 ```
 
 ---
 
-## 3. Handling Properties & Attributes
+## 🔄 Two-Way Binding Operator (`$`)
 
-SigPro distinguishes between static attributes and reactive bindings using the **`$` prefix**.
-
-### Static vs. Reactive Attributes
-* **Static:** Applied once during creation.
-* **Reactive (`$`):** Automatically updates the DOM when the signal changes.
-
-| Property | Syntax | Result |
-| :--- | :--- | :--- |
-| **Attribute** | `{ id: 'main' }` | `id="main"` |
-| **Event** | `{ onclick: fn }` | Adds an event listener. |
-| **Reactive Attr** | `{ $class: $theme }` | Updates `class` whenever `$theme()` changes. |
-| **Boolean Attr** | `{ $disabled: $isBusy }` | Toggles the `disabled` attribute automatically. |
-
-
-
----
-
-## 4. Two-Way Data Binding
-
-For form inputs, SigPro provides a powerful shortcut using `$value` or `$checked`. It automatically handles the event listening and the value synchronization.
+When a property starts with `$`, `$.html` enables bidirectional synchronization. This is primarily used for form inputs.
 
 ```javascript
-const $text = $("Type here...");
-
-input({ 
-  type: 'text', 
-  $value: $text // Syncs input -> signal and signal -> input
-});
-
-p(["You typed: ", $text]);
-```
-
----
-
-## 5. Reactive Content (Dynamic Children)
-
-The `content` argument is incredibly flexible. If you pass a **function**, SigPro treats it as a reactive "portal" that re-renders only that specific part of the DOM.
-
-### Text & Nodes
-```javascript
-const $count = $(0);
-
-// Text node updates surgically
-div(["Count: ", $count]); 
-
-// Conditional rendering with a function
-div(() => {
-  return $count() > 10 
-    ? h1("High Score!") 
-    : p("Keep going...");
+$.html("input", {
+  type: "text",
+  $value: username // Syncs input value <-> signal
 });
 ```
 
-### The "Guillotine" (Performance Tip)
-When a reactive function in the content returns a **new Node**, SigPro uses `replaceWith()` to swap the old node for the new one. This ensures that:
-1. The update is nearly instantaneous.
-2. The old node is correctly garbage-collected.
+## 🧹 Automatic Cleanup
+Every element created with `$.html` gets a hidden `._cleanups` property (a `Set`). 
+* When SigPro removes an element via `$.view` or `$.router`, it automatically executes all functions stored in this Set (stopping effects, removing listeners, etc.).
 
 ---
 
-## 6. Summary: Content Types
+## 💡 Tag Constructors (The Shortcuts)
 
-| Input | Behavior |
-| :--- | :--- |
-| **String / Number** | Appended as a TextNode. |
-| **HTMLElement** | Appended directly to the parent. |
-| **Array** | Each item is processed and appended in order. |
-| **Function `() => ...`** | Creates a **live reactive zone** that updates automatically. |
+Instead of writing `$.html("div", ...)` every time, SigPro provides PascalCase global functions:
+
+```javascript
+// This:
+Div({ class: "wrapper" }, [ Span("Hello") ])
+
+// Is exactly equivalent to:
+$.html("div", { class: "wrapper" }, [ $.html("span", {}, "Hello") ])
+```

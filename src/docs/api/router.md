@@ -1,106 +1,87 @@
-# Routing Engine: `$.router`
+# 🚦 Routing: `$.router( )` & `$.go( )`
 
-The `$.router` is SigPro's high-performance, hash-based navigation system. It connects the browser's URL directly to your reactive signals, enabling seamless page transitions without full reloads.
+SigPro includes a built-in, lightweight **Hash Router** to create Single Page Applications (SPA). It manages the URL state, matches components to paths, and handles the lifecycle of your pages automatically.
 
-## 1. Core Features
+## 🛠 Router Signature
 
-* **Hash-based:** Works everywhere without special server configuration (using `#/path`).
-* **Lazy Loading:** Pages are only downloaded when the user visits the route, keeping the initial bundle under 2KB.
-* **Reactive:** The view updates automatically and surgically when the hash changes.
-* **Dynamic Routes:** Built-in support for parameters like `/user/:id`.
+```typescript
+$.router(routes: Route[]): HTMLElement
+```
 
----
-
-## 2. Syntax: `$.router(routes)`
-
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| **routes** | `Array<Object>` | **Yes** | An array of route definitions `{ path, component }`. |
+### Route Object
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| **`path`** | `string` | The URL fragment (e.g., `"/home"`, `"/user/:id"`, or `"*"`). |
+| **`component`** | `Function` | A function that returns a Tag or a `$.view`. |
 
 ---
 
-## 3. Setting Up Routes
+## 📖 Usage Patterns
 
-In your `App.js` (or a dedicated routes file), define your navigation map and inject it into your layout.
+### 1. Defining Routes
+The router returns a `div` element with the class `.router-outlet`. When the hash changes, the router destroys the previous view and mounts the new one inside this container.
 
 ```javascript
-const routes = [
-  { path: '/', component: () => h1("Home Page") },
-  { 
-    path: '/admin', 
-    // Lazy Loading: This file is only fetched when needed
-    component: () => import('./pages/Admin.js') 
-  },
-  { path: '/user/:id', component: (params) => h2(`User ID: ${params.id}`) },
-  { path: '*', component: () => div("404 - Page Not Found") }
-];
-
-export default () => div([
-  header([
-    h1("SigPro App"),
-    nav([
-      button({ onclick: () => $.router.go('/') }, "Home"),
-      button({ onclick: () => $.router.go('/admin') }, "Admin")
-    ])
-  ]),
-  // The router returns a reactive div that swaps content
-  main($.router(routes)) 
+const App = () => Div({ class: "app-layout" }, [
+  Navbar(),
+  // The router outlet is placed here
+  $.router([
+    { path: "/", component: Home },
+    { path: "/profile/:id", component: UserProfile },
+    { path: "*", component: NotFound }
+  ])
 ]);
 ```
 
----
-
-## 4. Navigation (`$.router.go`)
-
-To move between pages programmatically (e.g., inside an `onclick` event or after a successful fetch), use the `$.router.go` helper.
+### 2. Dynamic Segments (`:id`)
+When a path contains a colon (e.g., `:id`), the router parses that segment and passes it as an object to the component function.
 
 ```javascript
-button({ 
-  onclick: () => $.router.go('/admin') 
-}, "Go to Admin")
-```
-
----
-
-## 5. How it Works (Under the Hood)
-
-The router tracks the `window.location.hash` and uses a reactive signal to trigger a re-render of the specific area where `$.router(routes)` is placed.
-
-1.  **Match:** It filters your route array to find the best fit, handling dynamic segments (`:id`) and fallbacks (`*`).
-2.  **Resolve:** * If it's a standard function, it executes it immediately.
-    * If it's a **Promise** (via `import()`), it renders a temporary `Loading...` state and swaps the content once the module arrives.
-3.  **Inject:** It replaces the previous DOM node with the new page content surgically using `replaceWith()`.
-
----
-
-## 6. Integration with UI Components
-
-Since the router is reactive, you can easily create "active" states in your navigation menus by checking the current hash.
-
-```javascript
-// Example of a reactive navigation link
-const NavLink = (path, label) => {
-  const $active = $(() => window.location.hash === `#${path}`);
-  
-  return button({ 
-    $class: () => $active() ? 'nav-active' : 'nav-link',
-    onclick: () => $.router.go(path) 
-  }, label);
+// If the URL is #/profile/42
+const UserProfile = (params) => {
+  return H1(`User ID is: ${params.id}`); // Displays "User ID is: 42"
 };
-
-nav([
-  NavLink('/', 'Home'),
-  NavLink('/settings', 'Settings')
-]);
 ```
 
 ---
 
-## 7. Summary: Route Component Types
+## 🏎 Programmatic Navigation: `$.go( )`
 
-| Component Type | Behavior |
-| :--- | :--- |
-| **HTMLElement** | Rendered immediately. |
-| **Function `(params) => ...`** | Executed with URL parameters and rendered. |
-| **Promise / `import()`** | Triggers **Lazy Loading** with a loading state. |
-| **String / Number** | Rendered as simple text inside a span. |
+To navigate between pages without using an `<a>` tag, use `$.go`. This function updates the browser's hash, which in turn triggers the router to swap components.
+
+### Signature
+```typescript
+$.go(path: string): void
+```
+
+### Examples
+```javascript
+// Navigate to a static path
+Button({ onclick: () => $.go("/") }, "Home")
+
+// Navigate to a dynamic path
+Button({ 
+  onclick: () => $.go(`/profile/${user.id}`) 
+}, "View Profile")
+```
+
+---
+
+## ⚡ Technical Behavior
+
+* **Automatic Cleanup**: Every time you navigate, the router calls `.destroy()` on the previous `$.view`. This ensures that all **signals, effects, and event listeners** from the old page are purged from memory.
+* **Hash-Based**: By using `window.location.hash`, SigPro works out-of-the-box on any static hosting (like GitHub Pages or Vercel) without needing server-side redirects.
+* **Initial Load**: On the first execution, `$.router` automatically reads the current hash or defaults to `/` if empty.
+
+---
+
+## 🎨 Styling the Outlet
+Since the router returns a standard DOM element, you can style the transition or the container easily:
+
+```css
+.router-outlet {
+  flex: 1;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease-in;
+}
+```

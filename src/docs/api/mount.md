@@ -1,107 +1,112 @@
-# Application Mounter: `$.mount`
+# 🔌 Application Mounter: `$.mount( )`
 
-The `$.mount` function is the entry point of your reactive world. It takes a **SigPro component** (or a plain DOM node) and injects it into the real document, bridging the gap between your logic and the browser.
+The `$.mount` function is the entry point of your reactive world. It bridges the gap between your SigPro logic and the browser's Real DOM by injecting a component into the document.
 
-## 1. Syntax: `$.mount(node, [target])`
+## 1. Function Signature
+
+```typescript
+$.mount(node: Function | HTMLElement, target?: string | HTMLElement): RuntimeObject
+```
 
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| **node** | `HTMLElement` or `Function` | **Required** | The component or element to render. |
-| **target** | `string` or `HTMLElement` | `document.body` | Where to mount the app (CSS selector or Element). |
+| **`node`** | `Function` or `Node` | **Required** | The component function or DOM element to render. |
+| **`target`** | `string` or `Node` | `document.body` | CSS selector or DOM element where the app will live. |
+
+**Returns:** A `Runtime` object containing the `container` and a `destroy()` method.
 
 ---
 
-## 2. Usage Scenarios
+## 2. Common Usage Scenarios
 
-### A. The "Clean Slate" (Main Entry)
-In a modern app, you usually want to control the entire page. By default, `$.mount` clears the target's existing HTML before mounting your application.
+### A. The "Clean Slate" (SPA Entry)
+In a modern Single Page Application, you typically want SigPro to manage the entire view. By default, if no target is provided, it mounts to `document.body`.
 
 ```javascript
-// src/main.js
-import { $ } from 'sigpro';
+import { $ } from './sigpro.js';
 import App from './App.js';
 
-// SigPro: No .then() needed, global tags are ready immediately
+// Mounts your main App component directly to the body
 $.mount(App); 
 ```
 
 ### B. Targeting a Specific Container
-If you have an existing HTML structure and want **SigPro** to manage only a specific section (like a `#root` div), pass a CSS selector or a reference.
+If your HTML has a predefined structure, you can tell SigPro exactly where to render by passing a CSS selector or a direct reference.
 
 ```html
 <div id="sidebar"></div>
-<div id="app-root"></div>
+<main id="app-root"></main>
 ```
 
 ```javascript
-// Mount to a specific ID
+// Mount using a CSS selector
 $.mount(MyComponent, '#app-root');
 
-// Or using a direct DOM reference
-const sidebar = document.getElementById('sidebar');
+// Mount using a direct DOM reference
+const sidebar = document.querySelector('#sidebar');
 $.mount(SidebarComponent, sidebar);
 ```
 
----
-
-## 3. Creating "Reactive Islands"
-One of SigPro's strengths is its ability to work alongside "Old School" static HTML. You can inject a reactive widget into any part of a legacy page.
+### C. Creating "Reactive Islands"
+SigPro is excellent for "sprinkling" reactivity onto legacy or static pages. You can inject small reactive widgets into any part of an existing HTML layout.
 
 ```javascript
 // A small reactive widget
 const CounterWidget = () => {
-  const $c = $(0);
-  return button({ onclick: () => $c(v => v + 1) }, [
-    "Clicks: ", $c
+  const count = $(0);
+  return Button({ onclick: () => count(c => c + 1) }, [
+    "Clicks: ", count
   ]);
 };
 
-// Mount it into an existing div in your static HTML
+// Mount it into a specific div in your static HTML
 $.mount(CounterWidget, '#counter-container');
 ```
 
 ---
 
-## 4. How it Works (Lifecycle)
-When `$.mount` is called, it performs three critical steps:
+## 3. How it Works (Lifecycle)
 
-1. **Resolution:** If you passed a **Function**, it executes it once to generate the initial DOM node.
-2. **Clearance:** It sets `target.innerHTML = ''`. This prevents "zombie" HTML or static placeholders from interfering with your app.
-3. **Injection:** It appends the resulting node to the target.
+When `$.mount` is executed, it performs these critical steps:
+
+1.  **Resolution & Wrapping**: If you pass a **Function**, SigPro wraps it in a `$.view()`. This starts tracking all internal signals and effects.
+2.  **Target Clearance**: It uses `target.replaceChildren()`. This efficiently wipes any existing HTML or "zombie" nodes inside the target before mounting.
+3.  **Injection**: The component's container is appended to the target.
+4.  **Memory Management**: It stores the `Runtime` instance associated with that DOM element. If you call `$.mount` again on the same target, SigPro automatically **destroys the previous app** to prevent memory leaks.
 
 ---
 
-## 5. Global vs. Local Scope
+## 4. Global vs. Local Scope
 
-### Global (The "Framework" Way)
-In a standard Vite project, you initialize SigPro in your entry file. This makes `$` and the tag helpers (`div`, `button`, etc.) available globally for a clean, declarative developer experience.
+### The "Framework" Way (Global)
+By importing your core in your entry file, SigPro automatically initializes global Tag Constructors (`Div`, `Span`, `H1`, etc.). This allows for a clean, declarative DX across your entire project.
 
 ```javascript
-// src/main.js
-import { $ } from 'sigpro'; 
+// main.js
+import './sigpro.js'; 
 
-// Any component in any file can now use:
-$.mount(() => h1("Global App"));
+// Now any file can simply do:
+$.mount(() => H1("Global SigPro App"));
 ```
 
-### Local (The "Library" Way)
-If you prefer to avoid polluting the `window` object, you can import and use SigPro locally within specific modules.
+### The "Library" Way (Local)
+If you prefer to avoid global variables, you can use the low-level `$.html` factory to create elements locally.
 
 ```javascript
-// widget.js
-import { $ } from 'sigpro';
+import { $ } from './sigpro.js';
 
-const myNode = $.html('div', 'Local Widget');
+const myNode = $.html('div', { class: 'widget' }, 'Local Instance');
 $.mount(myNode, '#widget-target');
 ```
 
 ---
 
-## 6. Summary Cheat Sheet
+## 5. Summary Cheat Sheet
 
-| Goal | Code |
+| Goal | Code Pattern |
 | :--- | :--- |
 | **Mount to body** | `$.mount(App)` |
-| **Mount to ID** | `$.mount(App, '#id')` |
+| **Mount to ID** | `$.mount(App, '#root')` |
 | **Mount to Element** | `$.mount(App, myElement)` |
-| **Direct Function** | `$.mount(() => div("Hi"), '#widget')` |
+| **Mount raw Node** | `$.mount(Div("Hello"), '#id')` |
+| **Unmount/Destroy** | `const app = $.mount(App); app.destroy();` |

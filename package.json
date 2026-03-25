@@ -1,6 +1,6 @@
 {
   "name": "sigpro",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -41,12 +41,14 @@
     "url": "https://github.com/natxocc/sigpro/issues"
   },
   "scripts": {
-    "docs:dev": "vitepress dev src/docs",
-    "docs:build": "vitepress build src/docs",
-    "docs:preview": "vitepress preview src/docs"
+    "dev:docs": "vitepress dev src/docs",
+    "build:docs": "vitepress build src/docs",
+    "preview:docs": "vitepress preview src/docs",
+    "build:aggrid": "vite build --config UI/aggrid/vite.config.js"
   },
   "devDependencies": {
-    "vitepress": "^1.6.4"
+    "vitepress": "^1.6.4",
+    "terser": "^5.46.1"
   },
   "keywords": [
     "signals",
